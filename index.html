@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gym Plan</title>
+<meta name="description" content="A three-day machine programme with a weights log that shows whether each lift is getting stronger.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Gym Plan">
+<meta name="theme-color" content="#f3f4f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111317" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: one phone-width column. Each session wears the colour of a bumper plate (red 25, blue 20, yellow 15, green 10). */
+:root {
+  --bg: #f3f4f6;
+  --surface: #ffffff;
+  --fg: #16181d;
+  --muted: #5d6370;
+  --line: #dfe2e7;
+  --field: #f7f8fa;
+  --red: #c8352e;
+  --blue: #2457b8;
+  --yellow: #a87800;
+  --green: #23824a;
+  --display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --body: "Atkinson Hyperlegible", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111317; --surface: #1a1d22; --fg: #e9ebef; --muted: #9aa1ad; --line: #2a2e35; --field: #22262c;
+    --red: #f06a5f; --blue: #6f9bf2; --yellow: #e8b73c; --green: #4fc27f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111317; --surface: #1a1d22; --fg: #e9ebef; --muted: #9aa1ad; --line: #2a2e35; --field: #22262c;
+  --red: #f06a5f; --blue: #6f9bf2; --yellow: #e8b73c; --green: #4fc27f; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--fg); font: 16px/1.5 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: calc(20px + env(safe-area-inset-top, 0px)) calc(48px + env(safe-area-inset-bottom, 0px));
+  margin: 0;
+}
+.wrap { max-width: 640px; margin: 0 auto; display: grid; gap: 28px; }
+h1, h2, h3, .num { font-family: var(--display); text-wrap: balance; margin: 0; }
+h1 { font-size: 44px; line-height: 1; font-weight: 700; letter-spacing: 0.01em; }
+h2 { font-size: 26px; font-weight: 600; line-height: 1.1; }
+h3 { font-size: 22px; font-weight: 600; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.small { font-size: 14px; }
+.eyebrow { font-family: var(--display); font-size: 14px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+section { display: grid; gap: 12px; }
+.c-legs { --c: var(--red); } .c-push { --c: var(--blue); } .c-pull { --c: var(--yellow); } .c-full { --c: var(--green); }
+
+/* week */
+.week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.day { border-radius: 8px; padding: 8px 2px 10px; text-align: center; background: var(--surface); border: 1px solid var(--line); display: grid; gap: 4px; min-width: 0; }
+.day .dname { font-family: var(--display); font-size: 15px; font-weight: 600; color: var(--muted); }
+.day .what { font-family: var(--display); font-size: 15px; font-weight: 600; line-height: 1.05; overflow-wrap: anywhere; }
+.day.rest .what { color: var(--muted); font-weight: 500; }
+.day.is-today { outline: 2px solid var(--fg); outline-offset: 1px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; margin: 0 auto; background: var(--line); }
+.day[class*="c-"] .dot { background: var(--c); }
+
+/* sessions */
+.jump { display: flex; flex-wrap: wrap; gap: 8px; }
+.jump a { font-family: var(--display); font-weight: 600; font-size: 17px; text-decoration: none; color: var(--fg); padding: 6px 12px; border-radius: 999px; border: 1.5px solid var(--c); display: inline-flex; gap: 6px; align-items: center; }
+.jump a::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.session { background: var(--surface); border: 1px solid var(--line); border-top: 5px solid var(--c); border-radius: 10px; padding: 14px 16px 16px; display: grid; gap: 10px; scroll-margin-top: 16px; }
+.session-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.badge { font-family: var(--display); font-size: 14px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--c); }
+.badge.today { color: var(--bg); background: var(--fg); padding: 1px 8px; border-radius: 4px; }
+.lifts { list-style: none; margin: 0; padding: 0; display: grid; }
+.lifts li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.lifts li:first-child { border-top: 0; padding-top: 2px; }
+.lifts .name { font-weight: 700; }
+.lifts .rx { font-family: var(--display); font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.lifts .cue { grid-column: 1 / -1; font-size: 14px; color: var(--muted); }
+.lifts .last { grid-column: 1 / -1; font-size: 14px; font-variant-numeric: tabular-nums; }
+.lifts .last:empty { display: none; }
+.lifts .last b { font-weight: 700; }
+.lifts .main { font-family: var(--display); font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c); margin-left: 6px; }
+.finisher { font-size: 14px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 10px; }
+
+/* buttons and the log form */
+.btn { font: 600 18px/1 var(--display); letter-spacing: 0.02em; padding: 12px 16px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; }
+.btn.primary { background: var(--c, var(--fg)); border-color: var(--c, var(--fg)); color: var(--surface); }
+.btn.wide { width: 100%; }
+.btn:disabled { opacity: 0.55; cursor: default; }
+.link { background: none; border: 0; padding: 4px 0; font: 14px var(--body); color: var(--muted); text-decoration: underline; cursor: pointer; }
+.link.danger { color: var(--red); }
+.logform { display: grid; gap: 14px; border-top: 1px solid var(--line); padding-top: 14px; }
+.logform fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 6px; min-width: 0; }
+.logform legend { font-weight: 700; padding: 0; margin-bottom: 4px; }
+.logform legend span { display: block; font-weight: 400; font-size: 14px; color: var(--muted); }
+.setrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
+.setrow label { display: grid; gap: 2px; font-size: 13px; color: var(--muted); }
+.setrow input, .datefield input { font: 600 20px/1 var(--display); font-variant-numeric: tabular-nums; width: 64px; padding: 8px; border-radius: 6px; border: 1.5px solid var(--line); background: var(--field); color: var(--fg); text-align: center; }
+.setrow .kg input { width: 82px; border-color: var(--c); }
+.datefield { display: flex; gap: 10px; align-items: center; font-size: 14px; color: var(--muted); }
+.datefield input { width: auto; font-size: 17px; text-align: left; }
+.formbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.msg { font-size: 14px; }
+.msg.err { color: var(--red); }
+.notice { font-size: 14px; color: var(--muted); background: var(--surface); border: 1px dashed var(--line); border-radius: 8px; padding: 10px 14px; }
+
+/* progress */
+.prog-group { display: grid; gap: 8px; }
+.prog-group h3 { display: flex; align-items: center; gap: 8px; font-size: 20px; }
+.prog-group h3::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
+.lift-card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 8px; min-width: 0; }
+.lift-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.lift-top .name { font-weight: 700; }
+.chip { font-family: var(--display); font-size: 15px; font-weight: 600; padding: 1px 8px; border-radius: 999px; border: 1.5px solid var(--line); white-space: nowrap; }
+.chip.up { border-color: var(--green); }
+.chip.stall { border-color: var(--red); }
+.lift-meta { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.lift-meta b { color: var(--fg); }
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: 84px; overflow: visible; touch-action: pan-y; }
+.chart .tip { position: absolute; top: -6px; transform: translate(-50%, -100%); background: var(--fg); color: var(--bg); font-size: 13px; padding: 4px 8px; border-radius: 6px; white-space: nowrap; pointer-events: none; font-variant-numeric: tabular-nums; }
+.history { list-style: none; margin: 0; padding: 0; display: grid; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.history li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 10px 14px; border-top: 1px solid var(--line); align-items: center; }
+.history li:first-child { border-top: 0; }
+.history .sess { font-weight: 700; }
+.history .sess::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--c); margin-right: 8px; }
+.history .detail { grid-column: 1 / -1; font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header style="display:grid;gap:8px">
+    <p class="eyebrow">From 17 October 2026</p>
+    <h1>Gym plan</h1>
+    <p class="muted">Legs, Push and Pull on Saturday, Sunday and Monday, with an optional full body on Wednesday. Each visit is about 30 minutes on the machines, then 30 minutes on the stairmaster.</p>
+  </header>
+
+  <section aria-labelledby="week-h">
+    <h2 id="week-h">The week</h2>
+    <div class="week" id="week">
+      <div class="day c-pull" data-wd="1"><span class="dname">Mon</span><span class="dot"></span><span class="what">Pull</span></div>
+      <div class="day rest" data-wd="2"><span class="dname">Tue</span><span class="dot"></span><span class="what">Rest</span></div>
+      <div class="day c-full" data-wd="3"><span class="dname">Wed</span><span class="dot"></span><span class="what">Full body?</span></div>
+      <div class="day rest" data-wd="4"><span class="dname">Thu</span><span class="dot"></span><span class="what">Futsal</span></div>
+      <div class="day rest" data-wd="5"><span class="dname">Fri</span><span class="dot"></span><span class="what">Rest</span></div>
+      <div class="day c-legs" data-wd="6"><span class="dname">Sat</span><span class="dot"></span><span class="what">Legs</span></div>
+      <div class="day c-push" data-wd="0"><span class="dname">Sun</span><span class="dot"></span><span class="what">Push</span></div>
+    </div>
+    <p class="small muted">Missed one? Do it on the next gym day. Wednesday is optional and its legs stay light, because futsal is on Thursday evening. No stairs on futsal day.</p>
+  </section>
+
+  <section aria-labelledby="off-h">
+    <h2 id="off-h">The week off</h2>
+    <div class="week">
+      <div class="day c-legs"><span class="dname">Sat</span><span class="dot"></span><span class="what">Legs</span></div>
+      <div class="day c-push"><span class="dname">Sun</span><span class="dot"></span><span class="what">Push</span></div>
+      <div class="day c-pull"><span class="dname">Mon</span><span class="dot"></span><span class="what">Pull</span></div>
+      <div class="day rest"><span class="dname">Tue</span><span class="dot"></span><span class="what">Easy stairs</span></div>
+      <div class="day c-full"><span class="dname">Wed</span><span class="dot"></span><span class="what">Full body</span></div>
+      <div class="day rest"><span class="dname">Thu</span><span class="dot"></span><span class="what">Futsal</span></div>
+      <div class="day rest"><span class="dname">Fri</span><span class="dot"></span><span class="what">Easy stairs</span></div>
+    </div>
+    <p class="small muted">The extra days are 30 minutes of easy stairs only. You're going from nothing to daily, so this week stop every set with 2–3 reps still in the tank.</p>
+  </section>
+
+  <section aria-labelledby="sessions-h">
+    <h2 id="sessions-h">The sessions</h2>
+    <nav class="jump" aria-label="Jump to a session">
+      <a class="c-legs" href="#legs">Legs</a><a class="c-push" href="#push">Push</a><a class="c-pull" href="#pull">Pull</a><a class="c-full" href="#full">Full body</a>
+    </nav>
+    <p class="small muted">Warm up with 5 minutes on the bike or rower. Rest 90 s after the first lift, 60 s after the others. Use the same weight until every set reaches the top of its range, then add the smallest jump. The log below tells you when.</p>
+    <p class="notice" id="db-notice">Loading your log…</p>
+    <div id="sessions" style="display:grid;gap:12px"></div>
+  </section>
+
+  <section aria-labelledby="prog-h">
+    <h2 id="prog-h">Getting stronger?</h2>
+    <p class="small muted">Each lift's heaviest set per session. A lift counts as stronger when its best set beats every session before it (more weight, or more reps at the weight). It counts as stalled after three sessions without doing that.</p>
+    <div id="progress" style="display:grid;gap:18px"><p class="notice">Log your first session and each lift's weights show up here.</p></div>
+  </section>
+
+  <section aria-labelledby="hist-h">
+    <h2 id="hist-h">Logged sessions</h2>
+    <div id="history"><p class="notice">Nothing logged yet.</p></div>
+    <div class="formbar">
+      <button class="btn" id="export" type="button">Export backup</button>
+      <label class="btn" for="import">Import backup</label>
+      <input id="import" type="file" accept="application/json,.json" hidden>
+    </div>
+    <p class="small muted" id="backup-msg" role="status">Your log is saved in this browser, on this device only. Export a backup now and then, to iCloud Drive for example.</p>
+  </section>
+</div>
+
+<script>
+(() => {
+  // The programme. Lifts shared between days use the same id, so their history is one line.
+  const PLAN = [
+    { id: 'legs', name: 'Legs', day: 'Saturday', wd: 6, finisher: 'Stairs: 20–30 min at a lower level than usual. Your legs are already done.', lifts: [
+      { id: 'leg-press', name: 'Leg press', sets: 3, lo: 8, hi: 12, step: 5, main: true, cue: 'Lower until your hips start to tuck, then drive through the whole foot.' },
+      { id: 'smith-rdl', name: 'Smith machine Romanian deadlift', sets: 3, lo: 8, hi: 10, step: 5, cue: 'Keep it light. Soft knees, hips back, bar close to your legs, flat back.' },
+      { id: 'leg-ext', name: 'Leg extension', sets: 3, lo: 10, hi: 15, step: 5, cue: 'Pause at the top, slow on the way down.' },
+      { id: 'leg-curl', name: 'Seated leg curl', sets: 3, lo: 10, hi: 15, step: 5, cue: 'Hips pinned down, full squeeze at the bottom.' },
+      { id: 'calf', name: 'Standing calf raise', sets: 3, lo: 12, hi: 15, step: 5, cue: 'Full stretch at the bottom, one-second pause.' },
+    ] },
+    { id: 'push', name: 'Push', day: 'Sunday', wd: 0, finisher: 'Stairs: 30 min, steady.', lifts: [
+      { id: 'iso-incline', name: 'Iso-lateral incline press', sets: 3, lo: 6, hi: 10, step: 2.5, main: true, cue: 'Start around 50 kg. Seat set so the handles start level with your upper chest.' },
+      { id: 'iso-chest', name: 'Iso-lateral chest press', sets: 3, lo: 8, hi: 12, step: 2.5, cue: 'Handles at mid-chest, elbows about 45° from your body.' },
+      { id: 'shoulder-press', name: 'Shoulder press machine', sets: 3, lo: 8, hi: 12, step: 5, cue: 'Back flat on the pad, handles start at chin height.' },
+      { id: 'lat-raise', name: 'Lateral raise machine', sets: 3, lo: 12, hi: 15, step: 5, cue: 'Lead with the elbows, stop at shoulder height.' },
+      { id: 'dip-machine', name: 'Triceps dip machine', sets: 2, lo: 10, hi: 15, step: 5, cue: 'Elbows tucked, slow on the way up.' },
+    ] },
+    { id: 'pull', name: 'Pull', day: 'Monday', wd: 1, finisher: 'Stairs: 30 min, steady.', lifts: [
+      { id: 'pulldown', name: 'Plate-loaded lat pulldown', sets: 3, lo: 8, hi: 12, step: 2.5, main: true, cue: 'No plate-loaded one? Use the assisted pull-up machine. Chest up, elbows down to your sides.' },
+      { id: 'iso-row', name: 'Iso-lateral row', sets: 3, lo: 8, hi: 12, step: 2.5, main: true, cue: 'Chest on the pad, elbows back past your ribs, one-second squeeze.' },
+      { id: 'seated-row', name: 'Seated row machine', sets: 2, lo: 10, hi: 12, step: 5, cue: 'Squeeze your shoulder blades together, slow on the way back.' },
+      { id: 'rear-delt', name: 'Reverse pec deck', sets: 3, lo: 12, hi: 15, step: 5, cue: 'The fly machine facing the other way. Arms long, pause at the back.' },
+      { id: 'curl-machine', name: 'Bicep curl machine', sets: 3, lo: 10, hi: 12, step: 5, cue: 'Elbows on the pad, no swing.' },
+    ] },
+    { id: 'full', name: 'Full body', day: 'Wednesday · optional', wd: 3, finisher: 'Stairs: 30 min, easy. Skip it if your legs feel heavy.', lifts: [
+      { id: 'leg-press-light', name: 'Leg press (light)', sets: 2, lo: 10, hi: 12, step: 5, cue: 'Lighter than Saturday. Stop two reps short, because futsal is tomorrow.' },
+      { id: 'iso-chest', cue: 'Same lift as Sunday, so its log carries over.' },
+      { id: 'iso-row', cue: 'Same lift as Monday.' },
+      { id: 'shoulder-press', cue: 'Same lift as Sunday.' },
+      { id: 'leg-curl', cue: 'Same lift as Saturday.' },
+    ] },
+  ];
+  // Every lift once, by id, with the session it first appears in (for its colour).
+  const LIFTS = {};
+  for (const s of PLAN) for (const l of s.lifts) if (!LIFTS[l.id]) LIFTS[l.id] = { ...l, session: s.id };
+  for (const s of PLAN) s.lifts = s.lifts.map((l) => ({ ...LIFTS[l.id], cue: l.cue }));
+  const SESSION = Object.fromEntries(PLAN.map((s) => [s.id, s]));
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const fmt = (n) => String(Math.round(n * 100) / 100);
+  const pad = (n) => String(n).padStart(2, '0');
+  const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+  const dateLabel = (k) => new Date(`${k}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  const num = (v) => { const n = parseFloat(String(v).replace(',', '.')); return Number.isFinite(n) && n >= 0 ? n : null; };
+
+  let db = null;
+  let logs = [];           // { id, date, session, entries: { liftId: [{ kg, reps }] }, savedAt }
+  const open = new Set();  // sessions whose log form is open
+
+  // ---- lift maths ----
+  const topKg = (sets) => Math.max(...sets.map((s) => s.kg));
+  const setsText = (sets) => {
+    const kgs = [...new Set(sets.map((s) => s.kg))];
+    return kgs.length === 1 ? `${fmt(kgs[0])} kg × ${sets.map((s) => s.reps).join(', ')}` : sets.map((s) => `${fmt(s.kg)}×${s.reps}`).join(', ');
+  };
+  function history(liftId) {
+    return logs.filter((l) => l.entries && Array.isArray(l.entries[liftId]) && l.entries[liftId].length)
+      .sort((a, b) => (a.date + (a.savedAt || 0)).localeCompare(b.date + (b.savedAt || 0)))
+      .map((l) => ({ date: l.date, sets: l.entries[liftId] }));
+  }
+  // Double progression: every set at the top of the range earns the next step.
+  function suggest(lift) {
+    const h = history(lift.id);
+    const last = h.at(-1);
+    if (!last) return { kg: null, note: `First time: pick a weight you can do ${lift.sets} sets of ${lift.lo}–${lift.hi} with.` };
+    const kg = topKg(last.sets);
+    const allTop = last.sets.length >= lift.sets && last.sets.every((s) => s.reps >= lift.hi);
+    return allTop
+      ? { kg: kg + lift.step, up: true, note: `Every set hit ${lift.hi} last time: go up to ${fmt(kg + lift.step)} kg.`, last }
+      : { kg, note: `Same weight. Beat ${last.sets.map((s) => s.reps).join(', ')}.`, last };
+  }
+  // A session's score: heaviest weight first, then total reps at that weight.
+  const score = (sets) => { const kg = topKg(sets); return [kg, sets.filter((s) => s.kg === kg).reduce((n, s) => n + s.reps, 0)]; };
+  const beats = (a, b) => a[0] > b[0] || (a[0] === b[0] && a[1] > b[1]);
+  const best = (list) => list.reduce((b, s) => (beats(s, b) ? s : b));
+  function verdict(h) {
+    if (h.length < 2) return { cls: '', text: 'First log' };
+    const scores = h.map((x) => score(x.sets));
+    if (h.length >= 4 && !scores.slice(-3).some((s) => beats(s, best(scores.slice(0, -3))))) return { cls: 'stall', text: '■ Stalled' };
+    if (beats(scores.at(-1), best(scores.slice(0, -1)))) return { cls: 'up', text: '▲ Stronger' };
+    return { cls: '', text: '● Holding' };
+  }
+
+  // ---- sessions ----
+  function renderSessions() {
+    $('sessions').innerHTML = PLAN.map((s) => `
+      <article class="session c-${s.id}" id="${s.id}" data-wd="${s.wd}">
+        <div class="session-head"><h3>${esc(s.name)}</h3><span class="badge">${esc(s.day)}</span></div>
+        <ul class="lifts">${s.lifts.map((l) => `<li><span class="name">${esc(l.name)}${l.main ? '<span class="main">main</span>' : ''}</span>
+          <span class="rx">${l.sets} × ${l.lo}–${l.hi}</span><span class="cue">${esc(l.cue)}</span><span class="last" data-last="${l.id}"></span></li>`).join('')}</ul>
+        <p class="finisher">${esc(s.finisher)}</p>
+        <div class="logslot" data-slot="${s.id}"></div>
+      </article>`).join('');
+    const wd = new Date().getDay();
+    document.querySelectorAll('#week .day').forEach((el) => el.classList.toggle('is-today', Number(el.dataset.wd) === wd));
+    const t = document.querySelector(`.session[data-wd="${wd}"] .badge`);
+    if (t) { t.textContent = 'Today'; t.classList.add('today'); }
+  }
+  function renderLast() {
+    document.querySelectorAll('[data-last]').forEach((el) => {
+      const lift = LIFTS[el.dataset.last];
+      const sg = suggest(lift);
+      el.innerHTML = sg.last ? `Last (${esc(dateLabel(sg.last.date))}): <b>${esc(setsText(sg.last.sets))}</b>${sg.up ? ` · next <b>${fmt(sg.kg)} kg ▲</b>` : ''}` : '';
+    });
+  }
+  function renderSlots() {
+    for (const s of PLAN) {
+      const slot = document.querySelector(`[data-slot="${s.id}"]`);
+      if (open.has(s.id)) continue;   // never redraw a form someone is typing in
+      slot.innerHTML = db ? `<button class="btn primary wide" data-open="${s.id}">Log ${esc(s.name)}</button>` : '';
+    }
+  }
+  function openForm(sid, date = todayKey()) {
+    const s = SESSION[sid];
+    const existing = logs.find((l) => l.id === `${date}_${sid}`);
+    open.add(sid);
+    const slot = document.querySelector(`[data-slot="${sid}"]`);
+    slot.innerHTML = `<form class="logform" data-form="${sid}" novalidate>
+      <div class="datefield"><label for="date-${sid}">Date</label><input type="date" id="date-${sid}" value="${esc(date)}" max="${todayKey()}"></div>
+      ${existing ? '<p class="small muted">Already logged on this date. Saving replaces it.</p>' : ''}
+      ${s.lifts.map((l) => {
+        const sg = suggest(l);
+        const prev = existing?.entries?.[l.id];
+        const kg = prev ? prev[0].kg : sg.kg;
+        return `<fieldset><legend>${esc(l.name)}<span>${esc(sg.note)}</span></legend>
+          <div class="setrow"><label class="kg">kg<input id="kg-${sid}-${l.id}" inputmode="decimal" value="${kg == null ? '' : fmt(kg)}" placeholder="kg"></label>
+          ${Array.from({ length: l.sets }, (_, i) => `<label>Set ${i + 1}<input id="rep-${sid}-${l.id}-${i}" inputmode="numeric" placeholder="${l.lo}–${l.hi}" value="${prev?.[i] ? prev[i].reps : ''}"></label>`).join('')}</div></fieldset>`;
+      }).join('')}
+      <div class="formbar"><button class="btn primary" type="submit">Save ${esc(s.name)}</button><button class="btn" type="button" data-close="${sid}">Cancel</button></div>
+      <p class="msg" role="status" id="msg-${sid}"></p></form>`;
+  }
+  function closeForm(sid) { open.delete(sid); renderSlots(); }
+
+  async function save(form) {
+    const sid = form.dataset.form;
+    const s = SESSION[sid];
+    const msg = $(`msg-${sid}`);
+    const date = $(`date-${sid}`).value;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { msg.className = 'msg err'; msg.textContent = 'Pick the date you trained.'; return; }
+    const entries = {};
+    for (const l of s.lifts) {
+      const kg = num($(`kg-${sid}-${l.id}`).value);
+      const reps = Array.from({ length: l.sets }, (_, i) => num($(`rep-${sid}-${l.id}-${i}`).value)).filter((r) => r != null && r > 0).map(Math.round);
+      if (kg != null && reps.length) entries[l.id] = reps.map((r) => ({ kg, reps: r }));
+    }
+    if (!Object.keys(entries).length) { msg.className = 'msg err'; msg.textContent = 'Enter a weight and at least one set of reps for one lift.'; return; }
+    const btn = form.querySelector('[type="submit"]');
+    btn.disabled = true; msg.className = 'msg'; msg.textContent = 'Saving…';
+    try {
+      await db.collection('workouts').doc(`${date}_${sid}`).set({ date, session: sid, entries, savedAt: Date.now() });
+      closeForm(sid);
+      const done = document.querySelector(`[data-slot="${sid}"]`);
+      done.insertAdjacentHTML('beforeend', `<p class="msg" role="status" style="margin-top:8px">${esc(s.name)} saved for ${esc(dateLabel(date))}.</p>`);
+    } catch (e) {
+      btn.disabled = false; msg.className = 'msg err';
+      msg.textContent = 'Couldn’t save. This browser’s storage may be full or blocked. Export a backup, then try again.';
+    }
+  }
+
+  // ---- progress ----
+  function chart(h, sid) {
+    const W = 300, H = 84, L = 8, R = 44, T = 10, B = 18;
+    const ys = h.map((x) => topKg(x.sets));
+    let lo = Math.min(...ys), hi = Math.max(...ys);
+    if (hi - lo < 5) { const m = (hi + lo) / 2; lo = m - 2.5; hi = m + 2.5; }
+    const x = (i) => L + (h.length === 1 ? 0 : (i / (h.length - 1)) * (W - L - R));
+    const y = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+    const pts = h.map((_, i) => [x(i), y(ys[i])]);
+    const line = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join('');
+    const area = `${line}L${pts.at(-1)[0].toFixed(1)},${H - B}L${pts[0][0].toFixed(1)},${H - B}Z`;
+    const end = pts.at(-1);
+    return `<div class="chart c-${sid}" data-chart='${esc(JSON.stringify(h.map((d, i) => ({ x: pts[i][0], y: pts[i][1], t: `${dateLabel(d.date)} · ${setsText(d.sets)}` }))))}'>
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Heaviest set per session, ${fmt(ys[0])} kg to ${fmt(ys.at(-1))} kg">
+        <line x1="${L}" x2="${W - R}" y1="${H - B}" y2="${H - B}" stroke="var(--line)" stroke-width="1"/>
+        <path d="${area}" fill="var(--c)" fill-opacity="0.12" stroke="none"/>
+        <path d="${line}" fill="none" stroke="var(--c)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+        ${pts.slice(0, -1).map((p) => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.5" fill="var(--c)"/>`).join('')}
+        <circle cx="${end[0].toFixed(1)}" cy="${end[1].toFixed(1)}" r="4.5" fill="var(--c)" stroke="var(--surface)" stroke-width="2"/>
+        <text x="${(end[0] + 8).toFixed(1)}" y="${(end[1] + 5).toFixed(1)}" fill="var(--fg)" font-size="14" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="600">${fmt(ys.at(-1))} kg</text>
+        <text x="${L}" y="${H - 3}" fill="var(--muted)" font-size="11" font-family="Atkinson Hyperlegible, system-ui, sans-serif">${esc(dateLabel(h[0].date))}</text>
+        <text x="${W - R}" y="${H - 3}" fill="var(--muted)" font-size="11" text-anchor="end" font-family="Atkinson Hyperlegible, system-ui, sans-serif">${esc(dateLabel(h.at(-1).date))}</text>
+        <line class="cross" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3 3" visibility="hidden"/>
+      </svg><div class="tip" hidden></div></div>`;
+  }
+  function renderProgress() {
+    const groups = PLAN.map((s) => {
+      const cards = s.lifts.filter((l) => LIFTS[l.id].session === s.id).map((l) => {
+        const h = history(l.id);
+        if (!h.length) return '';
+        const v = verdict(h);
+        const diff = topKg(h.at(-1).sets) - topKg(h[0].sets);
+        return `<div class="lift-card"><div class="lift-top"><span class="name">${esc(l.name)}</span><span class="chip ${v.cls}">${v.text}</span></div>
+          <p class="lift-meta">Latest: <b>${esc(setsText(h.at(-1).sets))}</b>${h.length > 1 ? ` · ${diff >= 0 ? '+' : '−'}${fmt(Math.abs(diff))} kg since ${esc(dateLabel(h[0].date))} · ${h.length} sessions` : ''}</p>
+          ${h.length > 1 ? chart(h, s.id) : ''}</div>`;
+      }).join('');
+      return cards ? `<div class="prog-group c-${s.id}"><h3>${esc(s.name)}</h3>${cards}</div>` : '';
+    }).join('');
+    $('progress').innerHTML = groups || '<p class="notice">Log your first session and each lift\'s weights show up here.</p>';
+  }
+  function renderHistory() {
+    const list = [...logs].filter((l) => SESSION[l.session]).sort((a, b) => (b.date + (b.savedAt || 0)).localeCompare(a.date + (a.savedAt || 0))).slice(0, 30);
+    $('history').innerHTML = list.length ? `<ul class="history">${list.map((l) => {
+      const s = SESSION[l.session];
+      const parts = Object.entries(l.entries || {}).filter(([id]) => LIFTS[id]).map(([id, sets]) => `${LIFTS[id].name} ${setsText(sets)}`);
+      return `<li class="c-${s.id}"><span class="sess">${esc(dateLabel(l.date))} · ${esc(s.name)}</span>
+        <span><button class="link" data-edit="${esc(l.id)}">Edit</button> · <button class="link danger" data-del="${esc(l.id)}">Delete</button></span>
+        <span class="detail">${esc(parts.join(' · '))}</span></li>`;
+    }).join('')}</ul>` : '<p class="notice">Nothing logged yet.</p>';
+  }
+  function renderData() { renderLast(); renderSlots(); renderProgress(); renderHistory(); }
+
+  // ---- events ----
+  let armed = null, armTimer = null;
+  document.addEventListener('click', async (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.open) openForm(b.dataset.open);
+    else if (b.dataset.close) closeForm(b.dataset.close);
+    else if (b.dataset.edit) {
+      const l = logs.find((x) => x.id === b.dataset.edit);
+      if (l) { openForm(l.session, l.date); $(l.session).scrollIntoView(); }
+    } else if (b.dataset.del) {
+      if (armed !== b.dataset.del) {
+        armed = b.dataset.del; b.textContent = 'Tap again to delete';
+        clearTimeout(armTimer); armTimer = setTimeout(() => { armed = null; renderHistory(); }, 4000);
+        return;
+      }
+      armed = null; b.disabled = true;
+      try { await db.collection('workouts').doc(b.dataset.del).delete(); } catch { b.disabled = false; b.textContent = 'Couldn’t delete. Tap to retry'; }
+    }
+  });
+  document.addEventListener('submit', (e) => { const f = e.target.closest('[data-form]'); if (f) { e.preventDefault(); save(f); } });
+  document.addEventListener('change', (e) => {
+    const m = e.target.id.match(/^date-(.+)$/);
+    if (m && SESSION[m[1]] && /^\d{4}-\d{2}-\d{2}$/.test(e.target.value)) openForm(m[1], e.target.value);
+  });
+  // Chart hover: nearest session to the pointer.
+  document.addEventListener('pointermove', (e) => {
+    document.querySelectorAll('.chart').forEach((c) => {
+      const svg = c.querySelector('svg'), tip = c.querySelector('.tip'), cross = c.querySelector('.cross');
+      const r = svg.getBoundingClientRect();
+      const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top - 8 && e.clientY <= r.bottom + 8;
+      if (!inside) { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); return; }
+      const pts = JSON.parse(c.dataset.chart);
+      const vx = ((e.clientX - r.left) / r.width) * 300;
+      const p = pts.reduce((a, b) => (Math.abs(b.x - vx) < Math.abs(a.x - vx) ? b : a));
+      cross.setAttribute('x1', p.x); cross.setAttribute('x2', p.x); cross.setAttribute('visibility', 'visible');
+      tip.textContent = p.t; tip.hidden = false;
+      tip.style.left = `${Math.min(Math.max((p.x / 300) * r.width, 70), r.width - 70)}px`;
+    });
+  });
+
+  // ---- start ----
+  // The log lives in this browser's storage: one list of sessions under one key.
+  const KEY = 'gym-plan:v1';
+  const read = () => { try { const v = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } };
+  const write = (list) => { localStorage.setItem(KEY, JSON.stringify(list)); logs = list; renderData(); };
+  db = {
+    collection: () => ({
+      doc: (id) => ({
+        set: async (data) => write([...read().filter((l) => l.id !== id), { id, ...data }]),
+        delete: async () => write(read().filter((l) => l.id !== id)),
+      }),
+    }),
+  };
+  renderSessions();
+  const notice = $('db-notice');
+  try { localStorage.setItem(`${KEY}:probe`, '1'); localStorage.removeItem(`${KEY}:probe`); notice.hidden = true; }
+  catch { db = null; notice.textContent = 'This browser is blocking storage (a private window?), so the log can’t save here. The plan still works.'; }
+  logs = read();
+  renderData();
+  addEventListener('storage', (e) => { if (e.key === KEY) { logs = read(); renderData(); } });
+
+  const backupMsg = $('backup-msg');
+  $('export').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify({ app: 'gym-plan', version: 1, exportedAt: new Date().toISOString(), workouts: read() }, null, 2)], { type: 'application/json' });
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `gym-plan-${todayKey()}.json` });
+    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    backupMsg.textContent = 'Backup exported.';
+  });
+  $('import').addEventListener('change', async (e) => {
+    const f = e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    try {
+      const b = JSON.parse(await f.text());
+      if (b?.app !== 'gym-plan' || !Array.isArray(b.workouts)) throw new Error('not a Gym Plan backup');
+      const ok = b.workouts.filter((l) => l && typeof l.id === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(l.date) && SESSION[l.session] && l.entries && typeof l.entries === 'object');
+      const merged = new Map(read().map((l) => [l.id, l]));
+      for (const l of ok) merged.set(l.id, l);
+      write([...merged.values()]);
+      backupMsg.textContent = `Imported ${ok.length} session${ok.length === 1 ? '' : 's'}. Sessions on the same date were replaced by the backup's.`;
+    } catch {
+      backupMsg.textContent = 'That file isn’t a Gym Plan backup. Pick a file this page exported.';
+    }
+  });
+})();
+</script>
+</body>
+</html>
