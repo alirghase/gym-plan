@@ -326,9 +326,10 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
       ${s.lifts.map((l) => {
         const sg = suggest(l);
         const prev = existing?.entries?.[l.id];
-        const kg = prev ? prev[0].kg : sg.kg;
+        // A new log starts blank with the last logged weight as the placeholder; editing keeps what was saved.
+        const lastKg = sg.last ? topKg(sg.last.sets) : null;
         return `<fieldset><legend>${esc(l.name)}<span>${esc(sg.note)}</span></legend>
-          <div class="setrow"><label class="kg">kg<input id="kg-${sid}-${l.id}" inputmode="decimal" value="${kg == null ? '' : fmt(kg)}" placeholder="kg"></label>
+          <div class="setrow"><label class="kg">kg<input id="kg-${sid}-${l.id}" inputmode="decimal" value="${prev ? fmt(prev[0].kg) : ''}" placeholder="${lastKg == null ? 'kg' : fmt(lastKg)}" data-last-kg="${lastKg ?? ''}"></label>
           ${Array.from({ length: l.sets }, (_, i) => `<label>Set ${i + 1}<input id="rep-${sid}-${l.id}-${i}" inputmode="numeric" placeholder="${l.lo}–${l.hi}" value="${prev?.[i] ? prev[i].reps : ''}"></label>`).join('')}</div></fieldset>`;
       }).join('')}
       <div class="formbar"><button class="btn primary" type="submit">Save ${esc(s.name)}</button><button class="btn" type="button" data-close="${sid}">Cancel</button></div>
@@ -344,7 +345,8 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { msg.className = 'msg err'; msg.textContent = 'Pick the date you trained.'; return; }
     const entries = {};
     for (const l of s.lifts) {
-      const kg = num($(`kg-${sid}-${l.id}`).value);
+      const kgInput = $(`kg-${sid}-${l.id}`);
+      const kg = num(kgInput.value) ?? num(kgInput.dataset.lastKg);   // blank kg means "same as last time"
       const reps = Array.from({ length: l.sets }, (_, i) => num($(`rep-${sid}-${l.id}-${i}`).value)).filter((r) => r != null && r > 0).map(Math.round);
       if (kg != null && reps.length) entries[l.id] = reps.map((r) => ({ kg, reps: r }));
     }
