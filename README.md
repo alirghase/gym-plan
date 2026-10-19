@@ -31,10 +31,22 @@ Tap **Log** under a session, enter the weight and each set's reps, and save. The
 - labels each lift **Stronger** when its latest session beats every one before it (more weight, or
   more reps at the same weight), and **Stalled** after three sessions without that.
 
-The log is saved in the browser's local storage on the device you use. Nothing is sent anywhere.
-**Export backup** writes it to a JSON file; **Import backup** merges one back in.
+**Signed in** (email and password), the log is saved online in Supabase, one row per session, and
+shows up on any device you sign in on. Row-level security means each account can only read and
+write its own rows. The key in `index.html` is Supabase's publishable key, which is public by
+design. The first sign-in on a browser moves any log saved there into the account.
+
+**Signed out**, the page still works, but the log is saved only in that browser's local storage,
+and clearing the browser deletes it.
+
+**Export backup** writes the log to a JSON file; **Import backup** merges one back in.
 
 ## Development
 
-One `index.html`: plain HTML, CSS and JavaScript, no build step and no dependencies. Fonts load
-from Google Fonts.
+One `index.html`: plain HTML, CSS and JavaScript, no build step. `supabase-js` and the fonts load
+from CDNs.
+
+The database lives in `supabase/`: the table and its row rules in `migrations/`, the auth settings
+in `config.toml`. With the [Supabase CLI](https://supabase.com/docs/guides/cli) linked to the
+project, `supabase db push` applies new migrations and `supabase config push` applies the auth
+settings.

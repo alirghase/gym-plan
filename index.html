@@ -118,7 +118,9 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
 .msg { font-size: 14px; }
 .msg.err { color: var(--red); }
 .notice { font-size: 14px; color: var(--muted); background: var(--surface); border: 1px dashed var(--line); border-radius: 8px; padding: 10px 14px; }
-
+.account { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 10px; }
+.account form { display: flex; flex-wrap: wrap; gap: 8px; }
+.account input { font: 17px var(--body); padding: 10px 12px; border-radius: 6px; border: 1.5px solid var(--line); background: var(--field); color: var(--fg); flex: 1 1 200px; min-width: 0; }
 /* progress */
 .prog-group { display: grid; gap: 8px; }
 .prog-group h3 { display: flex; align-items: center; gap: 8px; font-size: 20px; }
@@ -185,7 +187,8 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
       <a class="c-legs" href="#legs">Legs</a><a class="c-push" href="#push">Push</a><a class="c-pull" href="#pull">Pull</a><a class="c-full" href="#full">Full body</a>
     </nav>
     <p class="small muted">Start every session with the dumbbell warm-up at the top of its card. Rest 90 s after the first lift, 60 s after the others. Use the same weight until every set reaches the top of its range, then add the smallest jump. The log below tells you when.</p>
-    <p class="notice" id="db-notice">Loading your log…</p>
+    <div class="account" id="account" aria-live="polite"><p class="small muted">Loading your log…</p></div>
+    <p class="notice" id="db-notice" hidden></p>
     <div id="sessions" style="display:grid;gap:12px"></div>
   </section>
 
@@ -203,10 +206,11 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
       <label class="btn" for="import">Import backup</label>
       <input id="import" type="file" accept="application/json,.json" hidden>
     </div>
-    <p class="small muted" id="backup-msg" role="status">Your log is saved in this browser, on this device only. Export a backup now and then, to iCloud Drive for example.</p>
+    <p class="small muted" id="backup-msg" role="status"></p>
   </section>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
 <script>
 (() => {
   // The same dumbbell warm-up opens every session.
@@ -266,7 +270,7 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
   const dateLabel = (k) => new Date(`${k}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   const num = (v) => { const n = parseFloat(String(v).replace(',', '.')); return Number.isFinite(n) && n >= 0 ? n : null; };
 
-  let db = null;
+  let store = null;        // where the log is kept: local (this browser) or cloud (Supabase); null if neither works
   let logs = [];           // { id, date, session, entries: { liftId: [{ kg, reps }] }, savedAt }
   const open = new Set();  // sessions whose log form is open
 
@@ -333,7 +337,7 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
     for (const s of PLAN) {
       const slot = document.querySelector(`[data-slot="${s.id}"]`);
       if (open.has(s.id)) continue;   // never redraw a form someone is typing in
-      slot.innerHTML = db ? `<button class="btn primary wide" data-open="${s.id}">Log ${esc(s.name)}</button>` : '';
+      slot.innerHTML = store ? `<button class="btn primary wide" data-open="${s.id}">Log ${esc(s.name)}</button>` : '';
     }
   }
   function openForm(sid, date = todayKey()) {
@@ -375,14 +379,17 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
     const btn = form.querySelector('[type="submit"]');
     btn.disabled = true; msg.className = 'msg'; msg.textContent = 'Saving…';
     try {
-      await db.collection('workouts').doc(`${date}_${sid}`).set({ date, session: sid, entries, savedAt: Date.now() });
-      closeForm(sid);
-      const done = document.querySelector(`[data-slot="${sid}"]`);
-      done.insertAdjacentHTML('beforeend', `<p class="msg" role="status" style="margin-top:8px">${esc(s.name)} saved for ${esc(dateLabel(date))}.</p>`);
+      await store.set([{ id: `${date}_${sid}`, date, session: sid, entries, savedAt: Date.now() }]);
     } catch (e) {
       btn.disabled = false; msg.className = 'msg err';
-      msg.textContent = 'Couldn’t save. This browser’s storage may be full or blocked. Export a backup, then try again.';
+      msg.textContent = store === cloud ? 'Couldn’t save. No signal? Your numbers are still here: tap Save again.'
+        : 'Couldn’t save. This browser’s storage may be full or blocked. Export a backup, then try again.';
+      return;
     }
+    closeForm(sid);
+    reload();
+    const done = document.querySelector(`[data-slot="${sid}"]`);
+    done.insertAdjacentHTML('beforeend', `<p class="msg" role="status" style="margin-top:8px">${esc(s.name)} saved for ${esc(dateLabel(date))}${store === cloud ? ', online' : ''}.</p>`);
   }
 
   // ---- progress ----
@@ -454,10 +461,20 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
         return;
       }
       armed = null; b.disabled = true;
-      try { await db.collection('workouts').doc(b.dataset.del).delete(); } catch { b.disabled = false; b.textContent = 'Couldn’t delete. Tap to retry'; }
+      try { await store.del(b.dataset.del); } catch { b.disabled = false; b.textContent = 'Couldn’t delete. Tap to retry'; return; }
+      reload();
+    } else if (b.id === 'sign-out') {
+      b.disabled = true;
+      await sb.auth.signOut();
     }
   });
-  document.addEventListener('submit', (e) => { const f = e.target.closest('[data-form]'); if (f) { e.preventDefault(); save(f); } });
+  document.addEventListener('submit', (e) => {
+    const f = e.target.closest('form');
+    if (!f) return;
+    e.preventDefault();
+    if (f.dataset.form) save(f);
+    else if (f.id === 'auth') signIn(f, e.submitter?.value);
+  });
   document.addEventListener('change', (e) => {
     const m = e.target.id.match(/^date-(.+)$/);
     if (m && SESSION[m[1]] && /^\d{4}-\d{2}-\d{2}$/.test(e.target.value)) openForm(m[1], e.target.value);
@@ -478,30 +495,123 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
     });
   });
 
-  // ---- start ----
-  // The log lives in this browser's storage: one list of sessions under one key.
+  // ---- storage ----
+  // Signed out, the log lives in this browser: one list of sessions under one key.
+  // Signed in, it lives in Supabase, one row per session, and the database only lets each account see its own rows.
   const KEY = 'gym-plan:v1';
-  const read = () => { try { const v = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } };
-  const write = (list) => { localStorage.setItem(KEY, JSON.stringify(list)); logs = list; renderData(); };
-  db = {
-    collection: () => ({
-      doc: (id) => ({
-        set: async (data) => write([...read().filter((l) => l.id !== id), { id, ...data }]),
-        delete: async () => write(read().filter((l) => l.id !== id)),
-      }),
-    }),
+  const SUPABASE_URL = 'https://dbcuhiaggjdyeljawtxh.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_F-6NUIGGX-TEtDJo8aloRw_f-s_zwcm';   // public by design: the row rules, not this key, protect the data. gitleaks:allow
+  const readLocal = () => { try { const v = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } };
+  const writeLocal = (list) => localStorage.setItem(KEY, JSON.stringify(list));
+  const local = {
+    list: async () => readLocal(),
+    set: async (rows) => { const m = new Map(readLocal().map((l) => [l.id, l])); for (const r of rows) m.set(r.id, r); writeLocal([...m.values()]); },
+    del: async (id) => writeLocal(readLocal().filter((l) => l.id !== id)),
   };
-  renderSessions();
-  const notice = $('db-notice');
-  try { localStorage.setItem(`${KEY}:probe`, '1'); localStorage.removeItem(`${KEY}:probe`); notice.hidden = true; }
-  catch { db = null; notice.textContent = 'This browser is blocking storage (a private window?), so the log can’t save here. The plan still works.'; }
-  logs = read();
-  renderData();
-  addEventListener('storage', (e) => { if (e.key === KEY) { logs = read(); renderData(); } });
+  const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } }) : null;
+  let user = null;
+  const toRow = (l) => ({ user_id: user.id, id: l.id, date: l.date, session: l.session, entries: l.entries, saved_at: l.savedAt || Date.now() });
+  const fromRow = (r) => ({ id: r.id, date: r.date, session: r.session, entries: r.entries, savedAt: Number(r.saved_at) });
+  const must = ({ data, error }) => { if (error) throw error; return data; };
+  const cloud = {
+    list: async () => must(await sb.from('workouts').select('id,date,session,entries,saved_at')).map(fromRow),
+    // keepExisting: rows already online win (used when moving this phone's log up).
+    set: async (rows, keepExisting = false) => { must(await sb.from('workouts').upsert(rows.map(toRow), { onConflict: 'user_id,id', ignoreDuplicates: keepExisting })); },
+    del: async (id) => { must(await sb.from('workouts').delete().eq('id', id)); },
+  };
 
+  const notice = $('db-notice');
   const backupMsg = $('backup-msg');
+  let localOk = true;
+  try { localStorage.setItem(`${KEY}:probe`, '1'); localStorage.removeItem(`${KEY}:probe`); } catch { localOk = false; }
+
+  async function reload() {
+    const from = store;
+    try {
+      const list = from ? await from.list() : [];
+      if (from !== store) return;   // signed in or out while loading
+      logs = list; notice.hidden = true;
+    } catch {
+      notice.hidden = false; notice.textContent = 'Couldn’t load your log. Check your signal, then reload the page.';
+    }
+    renderData();
+  }
+
+  // ---- account ----
+  function renderAccount(step = {}) {
+    const box = $('account');
+    if (user) {
+      box.innerHTML = `<p class="small"><b>Saved online</b> to ${esc(user.email)}. Sign in with this email on any device to see your log.</p>
+        ${step.moved ? `<p class="small">Moved ${step.moved} session${step.moved === 1 ? '' : 's'} from this browser to your online log.</p>` : ''}
+        <div><button class="link" type="button" id="sign-out">Sign out</button></div>`;
+      backupMsg.textContent = 'Your log is saved online. Export a copy whenever you like.';
+      return;
+    }
+    backupMsg.textContent = localOk ? 'Signed out, your log is saved in this browser only, and clearing the browser deletes it. Sign in above to keep it safe.' : '';
+    if (!sb) {
+      box.innerHTML = `<p class="small muted">Online saving couldn’t load (no signal?), so the log saves in this browser for now. Reload to try again.</p>`;
+      return;
+    }
+    box.innerHTML = `<p class="small"><b>Keep your log safe.</b> Signed out, it’s saved in this browser only. Sign in and it’s saved online, on every device.</p>
+      <form id="auth"><input name="email" type="email" autocomplete="username" placeholder="Email" aria-label="Email" required>
+        <input name="password" type="password" autocomplete="current-password" minlength="8" placeholder="Password (8+ characters)" aria-label="Password" required>
+        <button class="btn primary" type="submit" value="in">Sign in</button><button class="btn" type="submit" value="up">Create account</button></form>
+      <p class="msg" role="status" id="auth-msg"></p>`;
+  }
+  async function signIn(f, mode) {
+    const email = f.elements.email.value.trim(), password = f.elements.password.value;
+    const msg = $('auth-msg');
+    if (!email || password.length < 8) { msg.className = 'msg err'; msg.textContent = 'Enter your email and a password of 8 or more characters.'; return; }
+    f.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+    msg.className = 'msg'; msg.textContent = mode === 'up' ? 'Creating your account…' : 'Signing in…';
+    const { error } = mode === 'up' ? await sb.auth.signUp({ email, password }) : await sb.auth.signInWithPassword({ email, password });
+    if (!error) return;   // onAuthStateChange takes over
+    f.querySelectorAll('button').forEach((b) => { b.disabled = false; });
+    msg.className = 'msg err';
+    msg.textContent = error.status === 429 ? 'Too many tries. Wait a few minutes, then try again.'
+      : error.code === 'invalid_credentials' ? 'Wrong email or password. New here? Tap Create account.'
+      : error.code === 'user_already_exists' ? 'There’s already an account with this email. Tap Sign in.'
+      : (error.message || 'Something went wrong. Check your signal and try again.');
+  }
+  async function useAccount(u) {
+    user = u;
+    store = u ? cloud : localOk ? local : null;
+    let moved = 0;
+    if (u) {
+      // First sign-in on this browser: move its log online. The local copy is set aside, not deleted.
+      const mine = readLocal();
+      if (mine.length) {
+        try {
+          await cloud.set(mine, true);
+          localStorage.setItem(`${KEY}:moved-online`, JSON.stringify(mine));
+          localStorage.removeItem(KEY);
+          moved = mine.length;
+        } catch { /* stays local; the next sign-in or reload tries again */ }
+      }
+    }
+    renderAccount({ moved });
+    await reload();
+  }
+
+  // ---- start ----
+  renderSessions();
+  if (!localOk && !sb) { notice.hidden = false; notice.textContent = 'This browser is blocking storage (a private window?), so the log can’t save here. The plan still works.'; }
+  if (sb) {
+    let started = false;
+    sb.auth.onAuthStateChange((event, session) => {
+      const u = session?.user ?? null;
+      if (started && (u?.id ?? null) === (user?.id ?? null)) return;   // token refreshes
+      started = true;
+      setTimeout(() => useAccount(u), 0);   // supabase-js advises against awaiting its calls inside this callback
+    });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && store === cloud) reload(); });
+  } else {
+    useAccount(null);
+  }
+  addEventListener('storage', (e) => { if (e.key === KEY && store === local) reload(); });
+
   $('export').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify({ app: 'gym-plan', version: 1, exportedAt: new Date().toISOString(), workouts: read() }, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify({ app: 'gym-plan', version: 1, exportedAt: new Date().toISOString(), workouts: logs }, null, 2)], { type: 'application/json' });
     const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `gym-plan-${todayKey()}.json` });
     a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     backupMsg.textContent = 'Backup exported.';
@@ -514,12 +624,13 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
       const b = JSON.parse(await f.text());
       if (b?.app !== 'gym-plan' || !Array.isArray(b.workouts)) throw new Error('not a Gym Plan backup');
       const ok = b.workouts.filter((l) => l && typeof l.id === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(l.date) && SESSION[l.session] && l.entries && typeof l.entries === 'object');
-      const merged = new Map(read().map((l) => [l.id, l]));
-      for (const l of ok) merged.set(l.id, l);
-      write([...merged.values()]);
+      if (!store) throw new Error('nowhere to save');
+      await store.set(ok);
+      await reload();
       backupMsg.textContent = `Imported ${ok.length} session${ok.length === 1 ? '' : 's'}. Sessions on the same date were replaced by the backup's.`;
-    } catch {
-      backupMsg.textContent = 'That file isn’t a Gym Plan backup. Pick a file this page exported.';
+    } catch (err) {
+      backupMsg.textContent = err?.message === 'not a Gym Plan backup' || err instanceof SyntaxError
+        ? 'That file isn’t a Gym Plan backup. Pick a file this page exported.' : 'Couldn’t import just now. Check your signal and try again.';
     }
   });
 })();
