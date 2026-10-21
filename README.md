@@ -47,6 +47,7 @@ One `index.html`: plain HTML, CSS and JavaScript, no build step. `supabase-js` a
 from CDNs.
 
 The database lives in `supabase/`: the table and its row rules in `migrations/`, the auth settings
-in `config.toml`. With the [Supabase CLI](https://supabase.com/docs/guides/cli) linked to the
+in `config.toml`. The same project also holds the tables for
+[Protein Log](https://github.com/alirghase/protein-log), so one account signs in to both. With the [Supabase CLI](https://supabase.com/docs/guides/cli) linked to the
 project, `supabase db push` applies new migrations and `supabase config push` applies the auth
 settings.
