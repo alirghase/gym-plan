@@ -150,7 +150,7 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
   <header style="display:grid;gap:8px">
     <p class="eyebrow">From 17 October 2026</p>
     <h1>Gym plan</h1>
-    <p class="muted">Legs, Push and Pull on Saturday, Sunday and Monday, with an optional full body on Wednesday. Each visit is about 30 minutes on the machines, then 30 minutes on the stairmaster.</p>
+    <p class="muted">Legs, Push and Pull on Saturday, Sunday and Monday, and a full body on Wednesday. Each visit is about 30 minutes on the machines, then 30 minutes on the stairmaster.</p>
   </header>
 
   <section aria-labelledby="week-h">
@@ -158,27 +158,13 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
     <div class="week" id="week">
       <div class="day c-pull" data-wd="1"><span class="dname">Mon</span><span class="dot"></span><span class="what">Pull</span></div>
       <div class="day rest" data-wd="2"><span class="dname">Tue</span><span class="dot"></span><span class="what">Rest</span></div>
-      <div class="day c-full" data-wd="3"><span class="dname">Wed</span><span class="dot"></span><span class="what">Full body?</span></div>
+      <div class="day c-full" data-wd="3"><span class="dname">Wed</span><span class="dot"></span><span class="what">Full body</span></div>
       <div class="day rest" data-wd="4"><span class="dname">Thu</span><span class="dot"></span><span class="what">Futsal</span></div>
       <div class="day rest" data-wd="5"><span class="dname">Fri</span><span class="dot"></span><span class="what">Rest</span></div>
       <div class="day c-legs" data-wd="6"><span class="dname">Sat</span><span class="dot"></span><span class="what">Legs</span></div>
       <div class="day c-push" data-wd="0"><span class="dname">Sun</span><span class="dot"></span><span class="what">Push</span></div>
     </div>
-    <p class="small muted">Missed one? Do it on the next gym day. Wednesday is optional and its legs stay light, because futsal is on Thursday evening. No stairs on futsal day.</p>
-  </section>
-
-  <section aria-labelledby="off-h">
-    <h2 id="off-h">The week off</h2>
-    <div class="week">
-      <div class="day c-legs"><span class="dname">Sat</span><span class="dot"></span><span class="what">Legs</span></div>
-      <div class="day c-push"><span class="dname">Sun</span><span class="dot"></span><span class="what">Push</span></div>
-      <div class="day c-pull"><span class="dname">Mon</span><span class="dot"></span><span class="what">Pull</span></div>
-      <div class="day rest"><span class="dname">Tue</span><span class="dot"></span><span class="what">Easy stairs</span></div>
-      <div class="day c-full"><span class="dname">Wed</span><span class="dot"></span><span class="what">Full body</span></div>
-      <div class="day rest"><span class="dname">Thu</span><span class="dot"></span><span class="what">Futsal</span></div>
-      <div class="day rest"><span class="dname">Fri</span><span class="dot"></span><span class="what">Easy stairs</span></div>
-    </div>
-    <p class="small muted">The extra days are 30 minutes of easy stairs only. You're going from nothing to daily, so this week stop every set with 2–3 reps still in the tank.</p>
+    <p class="small muted">Missed one? Do it on the next gym day. Wednesday's legs stay light, because futsal is on Thursday evening. No stairs on futsal day.</p>
   </section>
 
   <section aria-labelledby="sessions-h">
@@ -248,7 +234,7 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
       { id: 'rear-delt', name: 'Reverse pec deck', sets: 3, lo: 12, hi: 15, step: 5, cue: 'The fly machine facing the other way. Arms long, pause at the back.' },
       { id: 'curl-machine', name: 'Bicep curl machine', sets: 3, lo: 10, hi: 12, step: 5, cue: 'Elbows on the pad, no swing.' },
     ] },
-    { id: 'full', name: 'Full body', day: 'Wednesday · optional', wd: 3, finisher: 'Stairs: 30 min, easy. Skip it if your legs feel heavy.', lifts: [
+    { id: 'full', name: 'Full body', day: 'Wednesday', wd: 3, finisher: 'Stairs: 30 min, easy. Skip it if your legs feel heavy.', lifts: [
       { id: 'leg-press-light', name: 'Leg press (light)', sets: 2, lo: 10, hi: 12, step: 5, cue: 'Lighter than Saturday. Stop two reps short, because futsal is tomorrow.' },
       { id: 'iso-chest', cue: 'Same lift as Sunday, so its log carries over.' },
       { id: 'iso-row', cue: 'Same lift as Monday.' },

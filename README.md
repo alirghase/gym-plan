@@ -1,6 +1,6 @@
 # Gym Plan
 
-A three-day machine programme on one page, with a weights log that shows whether each lift is
+A four-day machine programme on one page, with a weights log that shows whether each lift is
 getting stronger.
 
 Live at **https://alirghase.github.io/gym-plan/**.
@@ -11,7 +11,7 @@ Live at **https://alirghase.github.io/gym-plan/**.
 |---|---|
 | Mon | Pull |
 | Tue | Rest |
-| Wed | Full body (optional) |
+| Wed | Full body |
 | Thu | Rest, futsal in the evening |
 | Fri | Rest |
 | Sat | Legs |
