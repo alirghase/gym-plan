@@ -210,12 +210,12 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
       { name: 'Dumbbell Romanian deadlift', reps: '10' },
       { name: 'Calf raise, a dumbbell in each hand', reps: '15' },
     ], lifts: [
-      { id: 'hack-squat', name: 'Hack squat', sets: 3, lo: 8, hi: 10, step: 5, main: true, cue: 'Feet shoulder-width, mid-platform. Go as deep as you can with your heels down, then drive up.' },
-      { id: 'leg-press', name: 'Leg press', sets: 3, lo: 10, hi: 12, step: 5, cue: 'After the hack squat, so it will feel heavier than usual. Lower until your hips start to tuck, then drive through the whole foot.' },
-      { id: 'smith-rdl', name: 'Smith machine Romanian deadlift', sets: 3, lo: 8, hi: 10, step: 5, cue: 'Keep it light. Soft knees, hips back, bar close to your legs, flat back.' },
-      { id: 'leg-ext', name: 'Leg extension', sets: 3, lo: 10, hi: 15, step: 5, cue: 'Pause at the top, slow on the way down.' },
-      { id: 'leg-curl', name: 'Seated leg curl', sets: 3, lo: 10, hi: 15, step: 5, cue: 'Hips pinned down, full squeeze at the bottom.' },
-      { id: 'calf', name: 'Standing calf raise', sets: 3, lo: 12, hi: 15, step: 5, cue: 'Full stretch at the bottom, one-second pause.' },
+      { id: 'hack-squat', name: 'Hack squat', sets: 3, lo: 8, hi: 10, step: 5, main: true, start: 20, cue: 'Feet shoulder-width, mid-platform. Go as deep as you can with your heels down, then drive up.' },
+      { id: 'leg-press', name: 'Leg press', sets: 3, lo: 10, hi: 12, step: 5, start: 80, cue: 'After the hack squat, so it will feel heavier than usual. Lower until your hips start to tuck, then drive through the whole foot.' },
+      { id: 'smith-rdl', name: 'Smith machine Romanian deadlift', sets: 3, lo: 8, hi: 10, step: 5, start: 30, cue: 'Keep it light. Soft knees, hips back, bar close to your legs, flat back.' },
+      { id: 'leg-ext', name: 'Leg extension', sets: 3, lo: 10, hi: 15, step: 5, start: 35, cue: 'Pause at the top, slow on the way down.' },
+      { id: 'leg-curl', name: 'Seated leg curl', sets: 3, lo: 10, hi: 15, step: 5, start: 30, cue: 'Hips pinned down, full squeeze at the bottom.' },
+      { id: 'calf', name: 'Standing calf raise', sets: 3, lo: 12, hi: 15, step: 5, start: 40, cue: 'Full stretch at the bottom, one-second pause.' },
     ] },
     { id: 'push', name: 'Push', day: 'Sunday', wd: 0, finisher: 'Stairs: 30 min, steady.', warmup: [
       { name: 'Arm circles, forwards then back', reps: '10 each' },
@@ -224,13 +224,13 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
       { name: 'Lateral raise', reps: '12' },
       { name: 'Bent-over rear-delt fly', reps: '12' },
     ], lifts: [
-      { id: 'viking', name: 'Viking press', sets: 3, lo: 8, hi: 10, step: 2.5, main: true, cue: 'Started at 40 kg. Brace your stomach and squeeze your glutes so your back doesn’t arch.' },
-      { id: 'shoulder-press', name: 'Iso-lateral shoulder press', sets: 3, lo: 8, hi: 10, step: 2.5, cue: 'Started at 40 kg. Back flat on the pad, handles start at chin height.' },
-      { id: 'rear-delt', name: 'Reverse pec deck', sets: 3, lo: 10, hi: 12, step: 5, cue: 'Rear delts, between the presses so your front shoulders rest. Arms long, pause at the back.' },
-      { id: 'iso-chest', name: 'Iso-lateral bench press', sets: 3, lo: 8, hi: 10, step: 2.5, cue: 'Started at 40 kg. Handles at mid-chest, elbows about 45° from your body.' },
-      { id: 'iso-incline', name: 'Iso-lateral incline press', sets: 3, lo: 8, hi: 10, step: 2.5, cue: 'Started at 30 kg. Seat set so the handles start level with your upper chest.' },
-      { id: 'db-lat-raise', name: 'Dumbbell lateral raise', sets: 3, lo: 12, hi: 15, step: 2, cue: 'Log the weight of one dumbbell. Light is right: lead with the elbows, stop at shoulder height, no swinging.' },
-      { id: 'pushdown', name: 'Triceps pushdown (cable)', sets: 2, lo: 10, hi: 15, step: 2.5, cue: 'Elbows pinned to your sides, straighten fully at the bottom.' },
+      { id: 'viking', name: 'Viking press', sets: 3, lo: 8, hi: 10, step: 2.5, main: true, start: 40, cue: 'Brace your stomach and squeeze your glutes so your back doesn’t arch.' },
+      { id: 'shoulder-press', name: 'Iso-lateral shoulder press', sets: 3, lo: 8, hi: 10, step: 2.5, start: 40, cue: 'Back flat on the pad, handles start at chin height.' },
+      { id: 'rear-delt', name: 'Reverse pec deck', sets: 3, lo: 10, hi: 12, step: 5, start: 73, cue: 'Rear delts, between the presses so your front shoulders rest. Arms long, pause at the back.' },
+      { id: 'iso-chest', name: 'Iso-lateral bench press', sets: 3, lo: 8, hi: 10, step: 2.5, start: 40, cue: 'Handles at mid-chest, elbows about 45° from your body.' },
+      { id: 'iso-incline', name: 'Iso-lateral incline press', sets: 3, lo: 8, hi: 10, step: 2.5, start: 30, cue: 'Seat set so the handles start level with your upper chest.' },
+      { id: 'db-lat-raise', name: 'Dumbbell lateral raise', sets: 3, lo: 12, hi: 15, step: 2, start: 6, cue: 'Log the weight of one dumbbell. Light is right: lead with the elbows, stop at shoulder height, no swinging.' },
+      { id: 'pushdown', name: 'Triceps pushdown (cable)', sets: 2, lo: 10, hi: 15, step: 2.5, start: 20, cue: 'Elbows pinned to your sides, straighten fully at the bottom.' },
     ] },
     { id: 'pull', name: 'Pull', day: 'Monday', wd: 1, finisher: 'Stairs: 30 min, steady.', warmup: [
       { name: 'Arm circles, forwards then back', reps: '10 each' },
@@ -239,13 +239,13 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
       { name: 'Dumbbell pullover, lying on a bench', reps: '10' },
       { name: 'Bicep curl', reps: '12' },
     ], lifts: [
-      { id: 'pulldown', name: 'Plate-loaded lat pulldown', sets: 3, lo: 8, hi: 12, step: 2.5, main: true, cue: 'No plate-loaded one? Use the assisted pull-up machine. Chest up, elbows down to your sides.' },
-      { id: 'iso-row', name: 'Iso-lateral row', sets: 3, lo: 8, hi: 12, step: 2.5, main: true, cue: 'Chest on the pad, elbows back past your ribs, one-second squeeze.' },
-      { id: 'seated-row', name: 'Seated row machine', sets: 2, lo: 10, hi: 12, step: 5, cue: 'Squeeze your shoulder blades together, slow on the way back.' },
+      { id: 'pulldown', name: 'Plate-loaded lat pulldown', sets: 3, lo: 8, hi: 12, step: 2.5, main: true, start: 30, cue: 'No plate-loaded one? Use the assisted pull-up machine. Chest up, elbows down to your sides.' },
+      { id: 'iso-row', name: 'Iso-lateral row', sets: 3, lo: 8, hi: 12, step: 2.5, main: true, start: 40, cue: 'Chest on the pad, elbows back past your ribs, one-second squeeze.' },
+      { id: 'seated-row', name: 'Seated row machine', sets: 2, lo: 10, hi: 12, step: 5, start: 40, cue: 'Squeeze your shoulder blades together, slow on the way back.' },
       { id: 'rear-delt', cue: 'Same lift as Sunday, so its log carries over. The fly machine facing the other way.' },
-      { id: 'curl-machine', name: 'Bicep curl machine', sets: 3, lo: 10, hi: 12, step: 5, cue: 'Elbows on the pad, no swing.' },
-      { id: 'hammer-curl', name: 'Dumbbell hammer curl', sets: 2, lo: 10, hi: 12, step: 2, cue: 'Log the weight of one dumbbell. Thumbs up, elbows still.' },
-      { id: 'back-ext', name: 'Back extension', sets: 2, lo: 12, hi: 15, step: 5, cue: 'Log 0 kg for bodyweight, or the plate you hug to your chest. Hinge at the hips, stop when your body is straight.' },
+      { id: 'curl-machine', name: 'Bicep curl machine', sets: 3, lo: 10, hi: 12, step: 5, start: 20, cue: 'Elbows on the pad, no swing.' },
+      { id: 'hammer-curl', name: 'Dumbbell hammer curl', sets: 2, lo: 10, hi: 12, step: 2, start: 10, cue: 'Log the weight of one dumbbell. Thumbs up, elbows still.' },
+      { id: 'back-ext', name: 'Back extension', sets: 2, lo: 12, hi: 15, step: 5, start: 0, cue: 'Log 0 kg for bodyweight, or the plate you hug to your chest. Hinge at the hips, stop when your body is straight.' },
     ] },
     { id: 'full', name: 'Full body', day: 'Wednesday', wd: 3, finisher: 'Stairs: 30 min, easy. Skip it if your legs feel heavy.', warmup: [
       { name: 'Arm circles, forwards then back', reps: '10 each' },
@@ -254,12 +254,12 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
       { name: 'Bent-over row', reps: '12' },
       { name: 'Overhead dumbbell press', reps: '10' },
     ], lifts: [
-      { id: 'leg-press-light', name: 'Leg press (light)', sets: 2, lo: 10, hi: 12, step: 5, cue: 'Lighter than Saturday. Stop two reps short, because futsal is tomorrow.' },
+      { id: 'leg-press-light', name: 'Leg press (light)', sets: 2, lo: 10, hi: 12, step: 5, start: 60, cue: 'Lighter than Saturday. Stop two reps short, because futsal is tomorrow.' },
       { id: 'iso-chest', cue: 'Same lift as Sunday, so its log carries over.' },
       { id: 'iso-row', cue: 'Same lift as Monday.' },
       { id: 'db-lat-raise', cue: 'Same lift as Sunday.' },
       { id: 'leg-curl', cue: 'Same lift as Saturday.' },
-      { id: 'cable-crunch', name: 'Cable crunch', sets: 3, lo: 12, hi: 15, step: 2.5, cue: 'Kneel facing the cable, rope by your head. Curl your ribs towards your hips; don’t pull with your arms.' },
+      { id: 'cable-crunch', name: 'Cable crunch', sets: 3, lo: 12, hi: 15, step: 2.5, start: 25, cue: 'Kneel facing the cable, rope by your head. Curl your ribs towards your hips; don’t pull with your arms.' },
     ] },
   ];
   // Every lift once, by id, with the session it first appears in (for its colour).
@@ -295,7 +295,9 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
   function suggest(lift) {
     const h = history(lift.id);
     const last = h.at(-1);
-    if (!last) return { kg: null, note: `First time: pick a weight you can do ${lift.sets} sets of ${lift.lo}–${lift.hi} with.` };
+    if (!last) return { kg: lift.start ?? null, note: lift.start != null
+      ? `First time: start at ${fmt(lift.start)} kg for ${lift.sets} sets of ${lift.lo}–${lift.hi}. Too easy or too hard? Change it.`
+      : `First time: pick a weight you can do ${lift.sets} sets of ${lift.lo}–${lift.hi} with.` };
     const kg = topKg(last.sets);
     const allTop = last.sets.length >= lift.sets && last.sets.every((s) => s.reps >= lift.hi);
     return allTop
@@ -336,7 +338,8 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
     document.querySelectorAll('[data-last]').forEach((el) => {
       const lift = LIFTS[el.dataset.last];
       const sg = suggest(lift);
-      el.innerHTML = sg.last ? `Last (${esc(dateLabel(sg.last.date))}): <b>${esc(setsText(sg.last.sets))}</b>${sg.up ? ` · next <b>${fmt(sg.kg)} kg ▲</b>` : ''}` : '';
+      el.innerHTML = sg.last ? `Last (${esc(dateLabel(sg.last.date))}): <b>${esc(setsText(sg.last.sets))}</b>${sg.up ? ` · next <b>${fmt(sg.kg)} kg ▲</b>` : ''}`
+        : lift.start != null ? `Start at <b>${fmt(lift.start)} kg</b>` : '';
     });
   }
   function renderSlots() {
@@ -353,15 +356,16 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
     const slot = document.querySelector(`[data-slot="${sid}"]`);
     slot.innerHTML = `<form class="logform" data-form="${sid}" novalidate>
       <div class="datefield"><label for="date-${sid}">Date</label><input type="date" id="date-${sid}" value="${esc(date)}" max="${todayKey()}"></div>
-      ${existing ? '<p class="small muted">Already logged on this date. Saving replaces it.</p>' : ''}
+      ${existing ? '<p class="small muted">Already logged on this date. Saving replaces it.</p>' : '<p class="small muted">Grey numbers come from last time, and the weight goes up a step once you’ve earned it. Leave the weight blank to use it; type the reps you did.</p>'}
       ${s.lifts.map((l) => {
         const sg = suggest(l);
         const prev = existing?.entries?.[l.id];
-        // A new log starts blank with the last logged weight as the placeholder; editing keeps what was saved.
-        const lastKg = sg.last ? topKg(sg.last.sets) : null;
+        // A new log starts blank with last time's weight and reps as placeholders (the starting weight on a first go);
+        // a blank weight saves that weight. Editing keeps what was saved.
+        const lastKg = sg.kg;
         return `<fieldset><legend>${esc(l.name)}<span>${esc(sg.note)}</span></legend>
           <div class="setrow"><label class="kg">kg<input id="kg-${sid}-${l.id}" inputmode="decimal" value="${prev ? fmt(prev[0].kg) : ''}" placeholder="${lastKg == null ? 'kg' : fmt(lastKg)}" data-last-kg="${lastKg ?? ''}"></label>
-          ${Array.from({ length: l.sets }, (_, i) => `<label>Set ${i + 1}<input id="rep-${sid}-${l.id}-${i}" inputmode="numeric" placeholder="${l.lo}–${l.hi}" value="${prev?.[i] ? prev[i].reps : ''}"></label>`).join('')}</div></fieldset>`;
+          ${Array.from({ length: l.sets }, (_, i) => `<label>Set ${i + 1}<input id="rep-${sid}-${l.id}-${i}" inputmode="numeric" placeholder="${sg.last?.sets[i]?.reps ?? `${l.lo}–${l.hi}`}" value="${prev?.[i] ? prev[i].reps : ''}"></label>`).join('')}</div></fieldset>`;
       }).join('')}
       <div class="formbar"><button class="btn primary" type="submit">Save ${esc(s.name)}</button><button class="btn" type="button" data-close="${sid}">Cancel</button></div>
       <p class="msg" role="status" id="msg-${sid}"></p></form>`;
