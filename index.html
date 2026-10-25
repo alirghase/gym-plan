@@ -172,7 +172,7 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
     <nav class="jump" aria-label="Jump to a session">
       <a class="c-legs" href="#legs">Legs</a><a class="c-push" href="#push">Push</a><a class="c-pull" href="#pull">Pull</a><a class="c-full" href="#full">Full body</a>
     </nav>
-    <p class="small muted">Start every session with the dumbbell warm-up at the top of its card. Rest 90 s after the first lift, 60 s after the others. Use the same weight until every set reaches the top of its range, then add the smallest jump. The log below tells you when.</p>
+    <p class="small muted">Start every session with the warm-up at the top of its card: it works the muscles that day trains. Rest 90 s after the first lift, 60 s after the others. Use the same weight until every set reaches the top of its range, then add the smallest jump. The log below tells you when.</p>
     <div class="account" id="account" aria-live="polite"><p class="small muted">Loading your log…</p></div>
     <p class="notice" id="db-notice" hidden></p>
     <div id="sessions" style="display:grid;gap:12px"></div>
@@ -199,42 +199,56 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
 <script>
 (() => {
-  // The same dumbbell warm-up opens every session.
-  const WARMUP = { head: 'Warm-up · 8 kg dumbbells', rounds: 'One easy round, straight through.', moves: [
-    { name: 'Goblet squat: one dumbbell held at your chest', reps: '10' },
-    { name: 'Walking lunges', reps: '10 each leg' },
-    { name: 'Dumbbell deadlift', reps: '10' },
-    { name: 'Thrusters: squat, then press overhead as you stand', reps: '10' },
-    { name: 'Bent-over row', reps: '12' },
-    { name: 'Overhead dumbbell press', reps: '10' },
-    { name: 'Lateral raise', reps: '12' },
-    { name: 'Front raise', reps: '12' },
-    { name: 'Bicep curl', reps: '12' },
-  ] };
+  // Each session opens with a short warm-up for the muscles it trains.
+  const WARMUP = { head: 'Warm-up · 8 kg dumbbells', rounds: 'One easy round, straight through, about 5 minutes.' };
   // The programme. Lifts shared between days use the same id, so their history is one line.
   const PLAN = [
-    { id: 'legs', name: 'Legs', day: 'Saturday', wd: 6, finisher: 'Stairs: 20–30 min at a lower level than usual. Your legs are already done.', lifts: [
+    { id: 'legs', name: 'Legs', day: 'Saturday', wd: 6, finisher: 'Stairs: 20–30 min at a lower level than usual. Your legs are already done.', warmup: [
+      { name: 'Bodyweight squat, slow', reps: '10' },
+      { name: 'Goblet squat: one dumbbell held at your chest', reps: '10' },
+      { name: 'Walking lunges', reps: '8 each leg' },
+      { name: 'Dumbbell Romanian deadlift', reps: '10' },
+      { name: 'Calf raise, a dumbbell in each hand', reps: '15' },
+    ], lifts: [
       { id: 'leg-press', name: 'Leg press', sets: 3, lo: 8, hi: 12, step: 5, main: true, cue: 'Lower until your hips start to tuck, then drive through the whole foot.' },
       { id: 'smith-rdl', name: 'Smith machine Romanian deadlift', sets: 3, lo: 8, hi: 10, step: 5, cue: 'Keep it light. Soft knees, hips back, bar close to your legs, flat back.' },
       { id: 'leg-ext', name: 'Leg extension', sets: 3, lo: 10, hi: 15, step: 5, cue: 'Pause at the top, slow on the way down.' },
       { id: 'leg-curl', name: 'Seated leg curl', sets: 3, lo: 10, hi: 15, step: 5, cue: 'Hips pinned down, full squeeze at the bottom.' },
       { id: 'calf', name: 'Standing calf raise', sets: 3, lo: 12, hi: 15, step: 5, cue: 'Full stretch at the bottom, one-second pause.' },
     ] },
-    { id: 'push', name: 'Push', day: 'Sunday', wd: 0, finisher: 'Stairs: 30 min, steady.', lifts: [
-      { id: 'iso-incline', name: 'Iso-lateral incline press', sets: 3, lo: 6, hi: 10, step: 2.5, main: true, cue: 'Start around 50 kg. Seat set so the handles start level with your upper chest.' },
-      { id: 'iso-chest', name: 'Iso-lateral chest press', sets: 3, lo: 8, hi: 12, step: 2.5, cue: 'Handles at mid-chest, elbows about 45° from your body.' },
-      { id: 'shoulder-press', name: 'Shoulder press machine', sets: 3, lo: 8, hi: 12, step: 5, cue: 'Back flat on the pad, handles start at chin height.' },
-      { id: 'lat-raise', name: 'Lateral raise machine', sets: 3, lo: 12, hi: 15, step: 5, cue: 'Lead with the elbows, stop at shoulder height.' },
-      { id: 'dip-machine', name: 'Triceps dip machine', sets: 2, lo: 10, hi: 15, step: 5, cue: 'Elbows tucked, slow on the way up.' },
+    { id: 'push', name: 'Push', day: 'Sunday', wd: 0, finisher: 'Stairs: 30 min, steady.', warmup: [
+      { name: 'Arm circles, forwards then back', reps: '10 each' },
+      { name: 'Push-ups (on your knees is fine)', reps: '10' },
+      { name: 'Overhead dumbbell press', reps: '10' },
+      { name: 'Lateral raise', reps: '12' },
+      { name: 'Bent-over rear-delt fly', reps: '12' },
+    ], lifts: [
+      { id: 'viking', name: 'Viking press', sets: 3, lo: 8, hi: 10, step: 2.5, main: true, cue: 'Started at 40 kg. Brace your stomach and squeeze your glutes so your back doesn’t arch.' },
+      { id: 'shoulder-press', name: 'Iso-lateral shoulder press', sets: 3, lo: 8, hi: 10, step: 2.5, cue: 'Started at 40 kg. Back flat on the pad, handles start at chin height.' },
+      { id: 'rear-delt', name: 'Reverse pec deck', sets: 3, lo: 10, hi: 12, step: 5, cue: 'Rear delts, between the presses so your front shoulders rest. Arms long, pause at the back.' },
+      { id: 'iso-chest', name: 'Iso-lateral bench press', sets: 3, lo: 8, hi: 10, step: 2.5, cue: 'Started at 40 kg. Handles at mid-chest, elbows about 45° from your body.' },
+      { id: 'iso-incline', name: 'Iso-lateral incline press', sets: 3, lo: 8, hi: 10, step: 2.5, cue: 'Started at 30 kg. Seat set so the handles start level with your upper chest.' },
     ] },
-    { id: 'pull', name: 'Pull', day: 'Monday', wd: 1, finisher: 'Stairs: 30 min, steady.', lifts: [
+    { id: 'pull', name: 'Pull', day: 'Monday', wd: 1, finisher: 'Stairs: 30 min, steady.', warmup: [
+      { name: 'Arm circles, forwards then back', reps: '10 each' },
+      { name: 'Bent-over row', reps: '12' },
+      { name: 'Bent-over rear-delt fly', reps: '12' },
+      { name: 'Dumbbell pullover, lying on a bench', reps: '10' },
+      { name: 'Bicep curl', reps: '12' },
+    ], lifts: [
       { id: 'pulldown', name: 'Plate-loaded lat pulldown', sets: 3, lo: 8, hi: 12, step: 2.5, main: true, cue: 'No plate-loaded one? Use the assisted pull-up machine. Chest up, elbows down to your sides.' },
       { id: 'iso-row', name: 'Iso-lateral row', sets: 3, lo: 8, hi: 12, step: 2.5, main: true, cue: 'Chest on the pad, elbows back past your ribs, one-second squeeze.' },
       { id: 'seated-row', name: 'Seated row machine', sets: 2, lo: 10, hi: 12, step: 5, cue: 'Squeeze your shoulder blades together, slow on the way back.' },
-      { id: 'rear-delt', name: 'Reverse pec deck', sets: 3, lo: 12, hi: 15, step: 5, cue: 'The fly machine facing the other way. Arms long, pause at the back.' },
+      { id: 'rear-delt', cue: 'Same lift as Sunday, so its log carries over. The fly machine facing the other way.' },
       { id: 'curl-machine', name: 'Bicep curl machine', sets: 3, lo: 10, hi: 12, step: 5, cue: 'Elbows on the pad, no swing.' },
     ] },
-    { id: 'full', name: 'Full body', day: 'Wednesday', wd: 3, finisher: 'Stairs: 30 min, easy. Skip it if your legs feel heavy.', lifts: [
+    { id: 'full', name: 'Full body', day: 'Wednesday', wd: 3, finisher: 'Stairs: 30 min, easy. Skip it if your legs feel heavy.', warmup: [
+      { name: 'Arm circles, forwards then back', reps: '10 each' },
+      { name: 'Goblet squat', reps: '10' },
+      { name: 'Push-ups (on your knees is fine)', reps: '10' },
+      { name: 'Bent-over row', reps: '12' },
+      { name: 'Overhead dumbbell press', reps: '10' },
+    ], lifts: [
       { id: 'leg-press-light', name: 'Leg press (light)', sets: 2, lo: 10, hi: 12, step: 5, cue: 'Lighter than Saturday. Stop two reps short, because futsal is tomorrow.' },
       { id: 'iso-chest', cue: 'Same lift as Sunday, so its log carries over.' },
       { id: 'iso-row', cue: 'Same lift as Monday.' },
@@ -300,8 +314,8 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
       <article class="session c-${s.id}" id="${s.id}" data-wd="${s.wd}">
         <div class="session-head"><h3>${esc(s.name)}</h3><span class="badge">${esc(s.day)}</span></div>
         <div class="warmup"><p class="wu-head">${esc(WARMUP.head)}</p>
-          <ul>${WARMUP.moves.map((m) => `<li>${esc(m.name)}<span>${esc(m.reps)}</span></li>`).join('')}</ul>
-          <p class="wu-note">${esc(WARMUP.rounds)} ${s.warmup ? `${esc(s.warmup)} ` : ''}${s.lifts[0].main ? `Then one light set of ${esc(s.lifts[0].name.toLowerCase())} at about half your working weight.` : ''}</p></div>
+          <ul>${s.warmup.map((m) => `<li>${esc(m.name)}<span>${esc(m.reps)}</span></li>`).join('')}</ul>
+          <p class="wu-note">${esc(WARMUP.rounds)} ${s.lifts[0].main ? `Then one light set of ${esc(s.lifts[0].name.toLowerCase())} at about half your working weight.` : ''}</p></div>
         <ul class="lifts">${s.lifts.map((l) => `<li><span class="name">${esc(l.name)}${l.main ? '<span class="main">main</span>' : ''}</span>
           <span class="rx">${l.sets} × ${l.lo}–${l.hi}</span><span class="cue">${esc(l.cue)}</span><span class="last" data-last="${l.id}"></span></li>`).join('')}</ul>
         <p class="finisher">${esc(s.finisher)}</p>
