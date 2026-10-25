@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Gym Plan</title>
-<meta name="description" content="A three-day machine programme with a weights log that shows whether each lift is getting stronger.">
+<meta name="description" content="A four-day machine programme with a weights log that shows whether each lift is getting stronger.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Gym Plan">
@@ -150,7 +150,7 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
   <header style="display:grid;gap:8px">
     <p class="eyebrow">From 17 October 2026</p>
     <h1>Gym plan</h1>
-    <p class="muted">Legs, Push and Pull on Saturday, Sunday and Monday, and a full body on Wednesday. Each visit is about 30 minutes on the machines, then 30 minutes on the stairmaster.</p>
+    <p class="muted">Legs, Push and Pull on Saturday, Sunday and Monday, and a full body on Wednesday. Each visit is about 45 minutes on the weights, then 30 minutes on the stairmaster.</p>
   </header>
 
   <section aria-labelledby="week-h">
@@ -210,7 +210,8 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
       { name: 'Dumbbell Romanian deadlift', reps: '10' },
       { name: 'Calf raise, a dumbbell in each hand', reps: '15' },
     ], lifts: [
-      { id: 'leg-press', name: 'Leg press', sets: 3, lo: 8, hi: 12, step: 5, main: true, cue: 'Lower until your hips start to tuck, then drive through the whole foot.' },
+      { id: 'hack-squat', name: 'Hack squat', sets: 3, lo: 8, hi: 10, step: 5, main: true, cue: 'Feet shoulder-width, mid-platform. Go as deep as you can with your heels down, then drive up.' },
+      { id: 'leg-press', name: 'Leg press', sets: 3, lo: 10, hi: 12, step: 5, cue: 'After the hack squat, so it will feel heavier than usual. Lower until your hips start to tuck, then drive through the whole foot.' },
       { id: 'smith-rdl', name: 'Smith machine Romanian deadlift', sets: 3, lo: 8, hi: 10, step: 5, cue: 'Keep it light. Soft knees, hips back, bar close to your legs, flat back.' },
       { id: 'leg-ext', name: 'Leg extension', sets: 3, lo: 10, hi: 15, step: 5, cue: 'Pause at the top, slow on the way down.' },
       { id: 'leg-curl', name: 'Seated leg curl', sets: 3, lo: 10, hi: 15, step: 5, cue: 'Hips pinned down, full squeeze at the bottom.' },
@@ -228,6 +229,8 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
       { id: 'rear-delt', name: 'Reverse pec deck', sets: 3, lo: 10, hi: 12, step: 5, cue: 'Rear delts, between the presses so your front shoulders rest. Arms long, pause at the back.' },
       { id: 'iso-chest', name: 'Iso-lateral bench press', sets: 3, lo: 8, hi: 10, step: 2.5, cue: 'Started at 40 kg. Handles at mid-chest, elbows about 45° from your body.' },
       { id: 'iso-incline', name: 'Iso-lateral incline press', sets: 3, lo: 8, hi: 10, step: 2.5, cue: 'Started at 30 kg. Seat set so the handles start level with your upper chest.' },
+      { id: 'db-lat-raise', name: 'Dumbbell lateral raise', sets: 3, lo: 12, hi: 15, step: 2, cue: 'Log the weight of one dumbbell. Light is right: lead with the elbows, stop at shoulder height, no swinging.' },
+      { id: 'pushdown', name: 'Triceps pushdown (cable)', sets: 2, lo: 10, hi: 15, step: 2.5, cue: 'Elbows pinned to your sides, straighten fully at the bottom.' },
     ] },
     { id: 'pull', name: 'Pull', day: 'Monday', wd: 1, finisher: 'Stairs: 30 min, steady.', warmup: [
       { name: 'Arm circles, forwards then back', reps: '10 each' },
@@ -241,6 +244,8 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
       { id: 'seated-row', name: 'Seated row machine', sets: 2, lo: 10, hi: 12, step: 5, cue: 'Squeeze your shoulder blades together, slow on the way back.' },
       { id: 'rear-delt', cue: 'Same lift as Sunday, so its log carries over. The fly machine facing the other way.' },
       { id: 'curl-machine', name: 'Bicep curl machine', sets: 3, lo: 10, hi: 12, step: 5, cue: 'Elbows on the pad, no swing.' },
+      { id: 'hammer-curl', name: 'Dumbbell hammer curl', sets: 2, lo: 10, hi: 12, step: 2, cue: 'Log the weight of one dumbbell. Thumbs up, elbows still.' },
+      { id: 'back-ext', name: 'Back extension', sets: 2, lo: 12, hi: 15, step: 5, cue: 'Log 0 kg for bodyweight, or the plate you hug to your chest. Hinge at the hips, stop when your body is straight.' },
     ] },
     { id: 'full', name: 'Full body', day: 'Wednesday', wd: 3, finisher: 'Stairs: 30 min, easy. Skip it if your legs feel heavy.', warmup: [
       { name: 'Arm circles, forwards then back', reps: '10 each' },
@@ -252,8 +257,9 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
       { id: 'leg-press-light', name: 'Leg press (light)', sets: 2, lo: 10, hi: 12, step: 5, cue: 'Lighter than Saturday. Stop two reps short, because futsal is tomorrow.' },
       { id: 'iso-chest', cue: 'Same lift as Sunday, so its log carries over.' },
       { id: 'iso-row', cue: 'Same lift as Monday.' },
-      { id: 'shoulder-press', cue: 'Same lift as Sunday.' },
+      { id: 'db-lat-raise', cue: 'Same lift as Sunday.' },
       { id: 'leg-curl', cue: 'Same lift as Saturday.' },
+      { id: 'cable-crunch', name: 'Cable crunch', sets: 3, lo: 12, hi: 15, step: 2.5, cue: 'Kneel facing the cable, rope by your head. Curl your ribs towards your hips; don’t pull with your arms.' },
     ] },
   ];
   // Every lift once, by id, with the session it first appears in (for its colour).
