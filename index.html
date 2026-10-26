@@ -239,11 +239,11 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
       { name: 'Dumbbell pullover, lying on a bench', reps: '10' },
       { name: 'Bicep curl', reps: '12' },
     ], lifts: [
-      { id: 'pulldown', name: 'Plate-loaded lat pulldown', sets: 3, lo: 8, hi: 12, step: 2.5, main: true, start: 30, cue: 'No plate-loaded one? Use the assisted pull-up machine. Chest up, elbows down to your sides.' },
+      { id: 'assisted-chin', name: 'Assisted chin-up machine', sets: 3, lo: 6, hi: 10, step: 5, main: true, assist: true, start: 40, cue: 'Log the assistance: less is stronger. Palms facing you, hands shoulder-width. Chest up to the bar, all the way down each rep.' },
       { id: 'iso-row', name: 'Iso-lateral row', sets: 3, lo: 8, hi: 12, step: 2.5, main: true, start: 40, cue: 'Chest on the pad, elbows back past your ribs, one-second squeeze.' },
-      { id: 'seated-row', name: 'Seated row machine', sets: 2, lo: 10, hi: 12, step: 5, start: 40, cue: 'Squeeze your shoulder blades together, slow on the way back.' },
+      { id: 'pullover', name: 'Pullover machine', sets: 3, lo: 10, hi: 12, step: 5, start: 30, cue: 'Push with your elbows, not your hands. Let your arms go back for a full stretch, then bring your elbows down to your stomach.' },
       { id: 'rear-delt', cue: 'Same lift as Sunday, so its log carries over. The fly machine facing the other way.' },
-      { id: 'curl-machine', name: 'Bicep curl machine', sets: 3, lo: 10, hi: 12, step: 5, start: 20, cue: 'Elbows on the pad, no swing.' },
+      { id: 'db-curl', name: 'Dumbbell curl', sets: 3, lo: 8, hi: 12, step: 2, start: 8, cue: 'Log the weight of one dumbbell. Seated, palms turning up as you curl, elbows still.' },
       { id: 'hammer-curl', name: 'Dumbbell hammer curl', sets: 2, lo: 10, hi: 12, step: 2, start: 10, cue: 'Log the weight of one dumbbell. Thumbs up, elbows still.' },
       { id: 'back-ext', name: 'Back extension', sets: 2, lo: 12, hi: 15, step: 5, start: 0, cue: 'Log 0 kg for bodyweight, or the plate you hug to your chest. Hinge at the hips, stop when your body is straight.' },
     ] },
@@ -296,21 +296,25 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
     const h = history(lift.id);
     const last = h.at(-1);
     if (!last) return { kg: lift.start ?? null, note: lift.start != null
-      ? `First time: start at ${fmt(lift.start)} kg for ${lift.sets} sets of ${lift.lo}–${lift.hi}. Too easy or too hard? Change it.`
+      ? `First time: start at ${fmt(lift.start)} kg${lift.assist ? ' of assistance' : ''} for ${lift.sets} sets of ${lift.lo}–${lift.hi}. Too easy or too hard? Change it.`
       : `First time: pick a weight you can do ${lift.sets} sets of ${lift.lo}–${lift.hi} with.` };
     const kg = topKg(last.sets);
     const allTop = last.sets.length >= lift.sets && last.sets.every((s) => s.reps >= lift.hi);
-    return allTop
-      ? { kg: kg + lift.step, up: true, note: `Every set hit ${lift.hi} last time: go up to ${fmt(kg + lift.step)} kg.`, last }
-      : { kg, note: `Same weight. Beat ${last.sets.map((s) => s.reps).join(', ')}.`, last };
+    if (!allTop) return { kg, note: `Same weight. Beat ${last.sets.map((s) => s.reps).join(', ')}.`, last };
+    // Assisted lifts get stronger by taking weight off.
+    if (lift.assist) {
+      const next = Math.max(0, kg - lift.step);
+      return { kg: next, up: next < kg, note: next < kg ? `Every set hit ${lift.hi} last time: drop the assistance to ${fmt(next)} kg.` : `Every set hit ${lift.hi} with no assistance. Try real chin-ups.`, last };
+    }
+    return { kg: kg + lift.step, up: true, note: `Every set hit ${lift.hi} last time: go up to ${fmt(kg + lift.step)} kg.`, last };
   }
-  // A session's score: heaviest weight first, then total reps at that weight.
-  const score = (sets) => { const kg = topKg(sets); return [kg, sets.filter((s) => s.kg === kg).reduce((n, s) => n + s.reps, 0)]; };
+  // A session's score: heaviest weight first (least assistance on an assisted lift), then total reps at that weight.
+  const score = (sets, assist) => { const kg = assist ? Math.min(...sets.map((s) => s.kg)) : topKg(sets); return [assist ? -kg : kg, sets.filter((s) => s.kg === kg).reduce((n, s) => n + s.reps, 0)]; };
   const beats = (a, b) => a[0] > b[0] || (a[0] === b[0] && a[1] > b[1]);
   const best = (list) => list.reduce((b, s) => (beats(s, b) ? s : b));
-  function verdict(h) {
+  function verdict(h, lift) {
     if (h.length < 2) return { cls: '', text: 'First log' };
-    const scores = h.map((x) => score(x.sets));
+    const scores = h.map((x) => score(x.sets, lift.assist));
     if (h.length >= 4 && !scores.slice(-3).some((s) => beats(s, best(scores.slice(0, -3))))) return { cls: 'stall', text: '■ Stalled' };
     if (beats(scores.at(-1), best(scores.slice(0, -1)))) return { cls: 'up', text: '▲ Stronger' };
     return { cls: '', text: '● Holding' };
@@ -323,7 +327,7 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
         <div class="session-head"><h3>${esc(s.name)}</h3><span class="badge">${esc(s.day)}</span></div>
         <div class="warmup"><p class="wu-head">${esc(WARMUP.head)}</p>
           <ul>${s.warmup.map((m) => `<li>${esc(m.name)}<span>${esc(m.reps)}</span></li>`).join('')}</ul>
-          <p class="wu-note">${esc(WARMUP.rounds)} ${s.lifts[0].main ? `Then one light set of ${esc(s.lifts[0].name.toLowerCase())} at about half your working weight.` : ''}</p></div>
+          <p class="wu-note">${esc(WARMUP.rounds)} ${s.lifts[0].main ? `Then one easy set of ${esc(s.lifts[0].name.toLowerCase())} ${s.lifts[0].assist ? 'with extra assistance' : 'at about half your working weight'}.` : ''}</p></div>
         <ul class="lifts">${s.lifts.map((l) => `<li><span class="name">${esc(l.name)}${l.main ? '<span class="main">main</span>' : ''}</span>
           <span class="rx">${l.sets} × ${l.lo}–${l.hi}</span><span class="cue">${esc(l.cue)}</span><span class="last" data-last="${l.id}"></span></li>`).join('')}</ul>
         <p class="finisher">${esc(s.finisher)}</p>
@@ -338,7 +342,7 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
     document.querySelectorAll('[data-last]').forEach((el) => {
       const lift = LIFTS[el.dataset.last];
       const sg = suggest(lift);
-      el.innerHTML = sg.last ? `Last (${esc(dateLabel(sg.last.date))}): <b>${esc(setsText(sg.last.sets))}</b>${sg.up ? ` · next <b>${fmt(sg.kg)} kg ▲</b>` : ''}`
+      el.innerHTML = sg.last ? `Last (${esc(dateLabel(sg.last.date))}): <b>${esc(setsText(sg.last.sets))}</b>${sg.up ? ` · next <b>${fmt(sg.kg)} kg ${lift.assist ? '▼' : '▲'}</b>` : ''}`
         : lift.start != null ? `Start at <b>${fmt(lift.start)} kg</b>` : '';
     });
   }
@@ -364,7 +368,7 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
         // a blank weight saves that weight. Editing keeps what was saved.
         const lastKg = sg.kg;
         return `<fieldset><legend>${esc(l.name)}<span>${esc(sg.note)}</span></legend>
-          <div class="setrow"><label class="kg">kg<input id="kg-${sid}-${l.id}" inputmode="decimal" value="${prev ? fmt(prev[0].kg) : ''}" placeholder="${lastKg == null ? 'kg' : fmt(lastKg)}" data-last-kg="${lastKg ?? ''}"></label>
+          <div class="setrow"><label class="kg">${l.assist ? 'Assist kg' : 'kg'}<input id="kg-${sid}-${l.id}" inputmode="decimal" value="${prev ? fmt(prev[0].kg) : ''}" placeholder="${lastKg == null ? 'kg' : fmt(lastKg)}" data-last-kg="${lastKg ?? ''}"></label>
           ${Array.from({ length: l.sets }, (_, i) => `<label>Set ${i + 1}<input id="rep-${sid}-${l.id}-${i}" inputmode="numeric" placeholder="${sg.last?.sets[i]?.reps ?? `${l.lo}–${l.hi}`}" value="${prev?.[i] ? prev[i].reps : ''}"></label>`).join('')}</div></fieldset>`;
       }).join('')}
       <div class="formbar"><button class="btn primary" type="submit">Save ${esc(s.name)}</button><button class="btn" type="button" data-close="${sid}">Cancel</button></div>
@@ -432,7 +436,7 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
       const cards = s.lifts.filter((l) => LIFTS[l.id].session === s.id).map((l) => {
         const h = history(l.id);
         if (!h.length) return '';
-        const v = verdict(h);
+        const v = verdict(h, l);
         const diff = topKg(h.at(-1).sets) - topKg(h[0].sets);
         return `<div class="lift-card"><div class="lift-top"><span class="name">${esc(l.name)}</span><span class="chip ${v.cls}">${v.text}</span></div>
           <p class="lift-meta">Latest: <b>${esc(setsText(h.at(-1).sets))}</b>${h.length > 1 ? ` · ${diff >= 0 ? '+' : '−'}${fmt(Math.abs(diff))} kg since ${esc(dateLabel(h[0].date))} · ${h.length} sessions` : ''}</p>
