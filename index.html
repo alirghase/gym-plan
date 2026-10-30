@@ -101,6 +101,7 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
 .btn { font: 600 18px/1 var(--display); letter-spacing: 0.02em; padding: 12px 16px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; }
 .btn.primary { background: var(--c, var(--fg)); border-color: var(--c, var(--fg)); color: var(--surface); }
 .btn.wide { width: 100%; }
+.copybox { width: 100%; font: 14px/1.45 var(--body); padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--fg); }
 .btn:disabled { opacity: 0.55; cursor: default; }
 .link { background: none; border: 0; padding: 4px 0; font: 14px var(--body); color: var(--muted); text-decoration: underline; cursor: pointer; }
 .link.danger { color: var(--red); }
@@ -193,6 +194,13 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
       <input id="import" type="file" accept="application/json,.json" hidden>
     </div>
     <p class="small muted" id="backup-msg" role="status"></p>
+  </section>
+
+  <section aria-labelledby="check-h">
+    <h2 id="check-h">Check-in</h2>
+    <div class="formbar"><button class="btn primary" id="copy-ai" type="button">Copy for Claude</button></div>
+    <p class="small muted" id="copy-msg" role="status">Last 28 days as text, to paste into Claude.</p>
+    <textarea class="copybox" id="copy-box" rows="10" readonly hidden aria-label="Check-in text"></textarea>
   </section>
 </div>
 
@@ -458,7 +466,58 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
   }
   function renderData() { renderLast(); renderSlots(); renderProgress(); renderHistory(); }
 
+  // ---- check-in ----
+  // The last 28 days as plain text for an AI to read: the plan, each session logged, and every lift's
+  // whole history in short (first, latest, verdict, what's next), so it can say what's working.
+  const CHECKIN_DAYS = 28, PER_WEEK = PLAN.length;
+  const longDate = (k) => new Date(`${k}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+  const shift = (k, n) => { const d = new Date(`${k}T12:00:00`); d.setDate(d.getDate() + n); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+  function checkinText() {
+    const today = todayKey(), winFrom = shift(today, 1 - CHECKIN_DAYS);
+    const all = logs.filter((l) => SESSION[l.session]).sort((a, b) => a.date.localeCompare(b.date));
+    // Start at the first session if that's later, so weeks before you started don't count as missed.
+    const from = all[0] && all[0].date > winFrom ? all[0].date : winFrom;
+    const days = Math.round((new Date(`${today}T12:00:00`) - new Date(`${from}T12:00:00`)) / 864e5) + 1;
+    const recent = all.filter((l) => l.date >= from);
+    const week = all.filter((l) => l.date > shift(today, -7));
+    const lines = [
+      `Gym check-in, ${longDate(today)} (sessions since ${longDate(from)})`,
+      'Summarise how my training is going: consistency, which lifts are progressing or stalled, and the one or two things to change.',
+      '',
+      `Plan: ${PER_WEEK} sessions a week, ${PLAN.map((s) => `${s.day} ${s.name}`).join(', ')}. About 45 min of weights then 30 min of stairs. Futsal on Thursday. I'm cutting (eating under maintenance). Progression: same weight until every set reaches the top of the rep range, then add the smallest step.`,
+      '',
+      `Sessions — ${recent.length} in ${days} days (plan ≈ ${Math.round(days / 7 * PER_WEEK)}); ${week.length} in the last 7 days (plan ${PER_WEEK})`,
+      ...recent.map((l) => `- ${longDate(l.date)}: ${SESSION[l.session].name} — ${Object.entries(l.entries || {}).filter(([id]) => LIFTS[id]).map(([id, sets]) => `${LIFTS[id].name} ${setsText(sets)}`).join('; ')}`),
+    ];
+    const lifts = Object.values(LIFTS).map((l) => ({ l, h: history(l.id) })).filter((x) => x.h.length);
+    if (lifts.length) {
+      lines.push('', 'Lifts (all-time; kg × reps per set; assisted chin-up kg is assistance, so lower is stronger)');
+      for (const { l, h } of lifts) {
+        const sg = suggest(l), v = verdict(h, l);
+        lines.push(`- ${l.name} (${SESSION[l.session].name}, ${l.sets} × ${l.lo}–${l.hi}): ${h.length} session${h.length === 1 ? '' : 's'}; `
+          + (h.length > 1 ? `first ${dateLabel(h[0].date)} ${setsText(h[0].sets)}; ` : '')
+          + `latest ${dateLabel(h.at(-1).date)} ${setsText(h.at(-1).sets)}; ${v.text.replace(/^[▲■●] /, '')}${sg.up ? `; next ${fmt(sg.kg)} kg` : ''}`);
+      }
+    }
+    const never = Object.values(LIFTS).filter((l) => !history(l.id).length);
+    if (never.length) lines.push('', `Never logged: ${never.map((l) => l.name).join(', ')}`);
+    return lines.join('\n');
+  }
+  async function copyCheckin() {
+    const text = checkinText(), box = $('copy-box'), msg = $('copy-msg');
+    try {
+      await navigator.clipboard.writeText(text);
+      box.hidden = true;
+      msg.textContent = 'Copied. Paste it into Claude.';
+    } catch {
+      // No clipboard access (some browsers, or not https): show the text to copy by hand.
+      box.value = text; box.hidden = false; box.focus(); box.select();
+      msg.textContent = 'Select all and copy, then paste into Claude.';
+    }
+  }
+
   // ---- events ----
+  $('copy-ai').addEventListener('click', copyCheckin);
   let armed = null, armTimer = null;
   document.addEventListener('click', async (e) => {
     const b = e.target.closest('button');
