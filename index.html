@@ -118,6 +118,12 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
 .formbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .msg { font-size: 14px; }
 .msg.err { color: var(--red); }
+/* rest timer: a bar pinned to the bottom while you rest between sets */
+.rest { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); width: min(608px, calc(100% - 32px)); display: flex; align-items: center; gap: 10px; padding: 10px 12px 10px 16px; background: var(--surface); border: 1.5px solid var(--line); border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,.18); z-index: 10; }
+.rest .rest-time { font: 700 34px/1 var(--display); font-variant-numeric: tabular-nums; min-width: 64px; }
+.rest .rest-what { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rest .btn { padding: 10px 12px; }
+.rest.go { background: var(--green); border-color: var(--green); color: var(--surface); }
 .notice { font-size: 14px; color: var(--muted); background: var(--surface); border: 1px dashed var(--line); border-radius: 8px; padding: 10px 14px; }
 .account { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 10px; }
 .account form { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -203,6 +209,8 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
     <textarea class="copybox" id="copy-box" rows="10" readonly hidden aria-label="Check-in text"></textarea>
   </section>
 </div>
+
+<div class="rest" id="rest" hidden><span class="rest-time" id="rest-time" role="timer">1:30</span><span class="small rest-what" id="rest-what"></span><button class="btn" id="rest-more" type="button">+30 s</button><button class="btn" id="rest-skip" type="button">Skip</button></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
 <script>
@@ -382,7 +390,7 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
       <div class="formbar"><button class="btn primary" type="submit">Save ${esc(s.name)}</button><button class="btn" type="button" data-close="${sid}">Cancel</button></div>
       <p class="msg" role="status" id="msg-${sid}"></p></form>`;
   }
-  function closeForm(sid) { open.delete(sid); renderSlots(); }
+  function closeForm(sid) { open.delete(sid); stopRest(); renderSlots(); }
 
   async function save(form) {
     const sid = form.dataset.form;
@@ -465,6 +473,39 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
     }).join('')}</ul>` : '<p class="notice">Nothing logged yet.</p>';
   }
   function renderData() { renderLast(); renderSlots(); renderProgress(); renderHistory(); }
+
+  // ---- rest timer ----
+  // Typing a set's reps starts the rest: 90 s after a main lift, 60 s after the others. It counts down to an
+  // end time, so a locked screen doesn't throw it off, then buzzes (Android) and beeps.
+  const rest = { end: 0, tick: null, hide: null, audio: null };
+  function startRest(secs, name) {
+    rest.end = Date.now() + secs * 1000;
+    $('rest-what').textContent = name;
+    $('rest').classList.remove('go'); $('rest').hidden = false;
+    try { rest.audio ??= new (window.AudioContext || window.webkitAudioContext)(); rest.audio.resume(); } catch {}   // unlocked by the typing
+    clearInterval(rest.tick); clearTimeout(rest.hide);
+    rest.tick = setInterval(tickRest, 250); tickRest();
+  }
+  function tickRest() {
+    const left = Math.ceil((rest.end - Date.now()) / 1000);
+    if (left > 0) { $('rest-time').textContent = `${Math.floor(left / 60)}:${pad(left % 60)}`; return; }
+    clearInterval(rest.tick);
+    $('rest-time').textContent = 'Go'; $('rest').classList.add('go');
+    navigator.vibrate?.([200, 100, 200]);
+    try {
+      const a = rest.audio, o = a.createOscillator(), g = a.createGain();
+      o.frequency.value = 880; g.gain.setValueAtTime(0.3, a.currentTime); g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.5);
+      o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime + 0.5);
+    } catch {}
+    rest.hide = setTimeout(stopRest, 6000);
+  }
+  function stopRest() { clearInterval(rest.tick); clearTimeout(rest.hide); $('rest').hidden = true; }
+  document.addEventListener('input', (e) => {
+    const m = e.target.id?.match(/^rep-[a-z]+-(.+)-\d+$/);
+    if (m && LIFTS[m[1]] && e.target.value.trim()) startRest(LIFTS[m[1]].main ? 90 : 60, LIFTS[m[1]].name);
+  });
+  $('rest-more').addEventListener('click', () => startRest(Math.max(0, (rest.end - Date.now()) / 1000) + 30, $('rest-what').textContent));
+  $('rest-skip').addEventListener('click', stopRest);
 
   // ---- check-in ----
   // The last 28 days as plain text for an AI to read: the plan, each session logged, and every lift's

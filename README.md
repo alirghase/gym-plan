@@ -31,6 +31,9 @@ Tap **Log** under a session, enter the weight and each set's reps, and save. The
 - labels each lift **Stronger** when its latest session beats every one before it (more weight, or
   more reps at the same weight), and **Stalled** after three sessions without that.
 
+**Rest timer:** typing a set's reps starts the rest, 90 s after a main lift and 60 s after the others, in a
+bar at the bottom with **+30 s** and **Skip**. When it's up the phone buzzes (Android) and beeps.
+
 **Signed in** (email and password), the log is saved online in Supabase, one row per session, and
 shows up on any device you sign in on. Row-level security means each account can only read and
 write its own rows. The key in `index.html` is Supabase's publishable key, which is public by
