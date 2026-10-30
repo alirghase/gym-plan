@@ -10,6 +10,8 @@
 <meta name="apple-mobile-web-app-title" content="Gym Plan">
 <meta name="theme-color" content="#f3f4f6" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#111317" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
 <style>
@@ -400,18 +402,24 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
     if (!Object.keys(entries).length) { msg.className = 'msg err'; msg.textContent = 'Enter a weight and at least one set of reps for one lift.'; return; }
     const btn = form.querySelector('[type="submit"]');
     btn.disabled = true; msg.className = 'msg'; msg.textContent = 'Saving…';
+    const row = { id: `${date}_${sid}`, date, session: sid, entries, savedAt: Date.now() };
+    let queued = false;
     try {
-      await store.set([{ id: `${date}_${sid}`, date, session: sid, entries, savedAt: Date.now() }]);
+      await store.set([row]);
     } catch (e) {
-      btn.disabled = false; msg.className = 'msg err';
-      msg.textContent = store === cloud ? 'Couldn’t save. No signal? Your numbers are still here: tap Save again.'
-        : 'Couldn’t save. This browser’s storage may be full or blocked. Export a backup, then try again.';
-      return;
+      // No signal at the gym: keep it on this phone and upload it later.
+      queued = store === cloud && queue(row);
+      if (!queued) {
+        btn.disabled = false; msg.className = 'msg err';
+        msg.textContent = store === cloud ? 'Couldn’t save. No signal? Your numbers are still here: tap Save again.'
+          : 'Couldn’t save. This browser’s storage may be full or blocked. Export a backup, then try again.';
+        return;
+      }
     }
     closeForm(sid);
-    reload();
+    await reload();   // before the message, or redrawing the slot wipes it
     const done = document.querySelector(`[data-slot="${sid}"]`);
-    done.insertAdjacentHTML('beforeend', `<p class="msg" role="status" style="margin-top:8px">${esc(s.name)} saved for ${esc(dateLabel(date))}${store === cloud ? ', online' : ''}.</p>`);
+    done.insertAdjacentHTML('beforeend', `<p class="msg" role="status" style="margin-top:8px">${esc(s.name)} saved for ${esc(dateLabel(date))}${queued ? ' on this phone. It uploads when you have signal' : store === cloud ? ', online' : ''}.</p>`);
   }
 
   // ---- progress ----
@@ -459,7 +467,7 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
     $('history').innerHTML = list.length ? `<ul class="history">${list.map((l) => {
       const s = SESSION[l.session];
       const parts = Object.entries(l.entries || {}).filter(([id]) => LIFTS[id]).map(([id, sets]) => `${LIFTS[id].name} ${setsText(sets)}`);
-      return `<li class="c-${s.id}"><span class="sess">${esc(dateLabel(l.date))} · ${esc(s.name)}</span>
+      return `<li class="c-${s.id}"><span class="sess">${esc(dateLabel(l.date))} · ${esc(s.name)}${l.waiting ? ' · not uploaded yet' : ''}</span>
         <span><button class="link" data-edit="${esc(l.id)}">Edit</button> · <button class="link danger" data-del="${esc(l.id)}">Delete</button></span>
         <span class="detail">${esc(parts.join(' · '))}</span></li>`;
     }).join('')}</ul>` : '<p class="notice">Nothing logged yet.</p>';
@@ -534,6 +542,7 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
         return;
       }
       armed = null; b.disabled = true;
+      if (store === cloud) setOutbox(outbox().filter((r) => r.id !== b.dataset.del));
       try { await store.del(b.dataset.del); } catch { b.disabled = false; b.textContent = 'Couldn’t delete. Tap to retry'; return; }
       reload();
     } else if (b.id === 'sign-out') {
@@ -598,15 +607,41 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
   let localOk = true;
   try { localStorage.setItem(`${KEY}:probe`, '1'); localStorage.removeItem(`${KEY}:probe`); } catch { localOk = false; }
 
+  // Signed in, sessions saved with no signal wait in an outbox on this phone and upload on the next load,
+  // and the last log loaded is kept as a copy so the page still shows it (and last time's weights) offline.
+  const OUTBOX = `${KEY}:outbox`, CACHE = `${KEY}:cache`;
+  const readJson = (k, empty) => { try { return JSON.parse(localStorage.getItem(k)) ?? empty; } catch { return empty; } };
+  const writeJson = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } };
+  const outbox = () => { const v = readJson(OUTBOX, []); return Array.isArray(v) ? v.filter((r) => r.user === user?.id) : []; };
+  const setOutbox = (rows) => writeJson(OUTBOX, [...readJson(OUTBOX, []).filter((r) => r.user !== user?.id), ...rows]);
+  const queue = (row) => localOk && setOutbox([...outbox().filter((r) => r.id !== row.id), { ...row, user: user.id }]);
+  async function flushOutbox() {
+    const rows = outbox();
+    if (!rows.length) return;
+    await cloud.set(rows);
+    const sent = new Set(rows.map((r) => `${r.id}@${r.savedAt}`));
+    setOutbox(outbox().filter((r) => !sent.has(`${r.id}@${r.savedAt}`)));   // keep anything saved meanwhile
+  }
+
   async function reload() {
     const from = store;
+    let list = [], offline = false;
     try {
-      const list = from ? await from.list() : [];
-      if (from !== store) return;   // signed in or out while loading
-      logs = list; notice.hidden = true;
+      if (from === cloud) await flushOutbox();
+      list = from ? await from.list() : [];
+      if (from === cloud) writeJson(CACHE, { user: user.id, logs: list });
     } catch {
-      notice.hidden = false; notice.textContent = 'Couldn’t load your log. Check your signal, then reload the page.';
+      const c = from === cloud ? readJson(CACHE, null) : null;
+      if (c?.user === user?.id && Array.isArray(c.logs)) { list = c.logs; offline = true; }
+      else { if (from !== store) return; notice.hidden = false; notice.textContent = 'Couldn’t load your log. Check your signal, then reload the page.'; renderData(); return; }
     }
+    if (from !== store) return;   // signed in or out while loading
+    const waiting = from === cloud ? outbox() : [];
+    const ids = new Set(waiting.map((r) => r.id));
+    logs = [...list.filter((l) => !ids.has(l.id)), ...waiting.map(({ user: _, ...r }) => ({ ...r, waiting: true }))];
+    notice.hidden = !offline && !waiting.length;
+    notice.textContent = offline ? `No signal: showing your log as last loaded${waiting.length ? `, plus ${waiting.length} session${waiting.length === 1 ? '' : 's'} to upload` : ''}.`
+      : waiting.length ? `${waiting.length} session${waiting.length === 1 ? '' : 's'} still to upload.` : '';
     renderData();
   }
 
@@ -682,6 +717,9 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
     useAccount(null);
   }
   addEventListener('storage', (e) => { if (e.key === KEY && store === local) reload(); });
+  addEventListener('online', () => { if (store === cloud) reload(); });
+  // The page and its scripts are cached, so it opens at the gym with no signal.
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 
   $('export').addEventListener('click', () => {
     const blob = new Blob([JSON.stringify({ app: 'gym-plan', version: 1, exportedAt: new Date().toISOString(), workouts: logs }, null, 2)], { type: 'application/json' });
