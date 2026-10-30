@@ -41,6 +41,11 @@ and clearing the browser deletes it.
 
 **Export backup** writes the log to a JSON file; **Import backup** merges one back in.
 
+**Copy for Claude** (under Check-in) copies the last 28 days as plain text: the plan, each session
+logged, and every lift's first and latest sets with its Stronger/Stalled label. Paste it into Claude or
+another AI for a summary. Sessions start at your first log if that's later, so earlier weeks don't count
+as missed. Nothing is sent anywhere; it only goes to the clipboard.
+
 ## Development
 
 One `index.html`: plain HTML, CSS and JavaScript, no build step. `supabase-js` and the fonts load
