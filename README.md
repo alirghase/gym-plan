@@ -42,6 +42,11 @@ design. The first sign-in on a browser moves any log saved there into the accoun
 **Signed out**, the page still works, but the log is saved only in that browser's local storage,
 and clearing the browser deletes it.
 
+**No signal at the gym:** the page is cached (`sw.js`), so it still opens, showing your log as last loaded
+with last time's weights. Signed in, a session saved offline waits on the phone (marked "not uploaded
+yet") and uploads on the next load, when the signal returns, or when you reopen the page. Add it to your
+home screen for an app icon (`manifest.webmanifest`).
+
 **Export backup** writes the log to a JSON file; **Import backup** merges one back in.
 
 **Copy for Claude** (under Check-in) copies the last 28 days as plain text: the plan, each session
