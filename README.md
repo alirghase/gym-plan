@@ -9,11 +9,11 @@ Live at **https://alirghase.github.io/gym-plan/**.
 
 | Day | Session |
 |---|---|
-| Mon | Pull |
+| Mon | Rest |
 | Tue | Rest |
 | Wed | Full body |
 | Thu | Rest, futsal in the evening |
-| Fri | Rest |
+| Fri | Pull |
 | Sat | Legs |
 | Sun | Push |
 
